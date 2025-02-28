@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Login - MIDAS Portal</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --primary-color: #2563eb;
+        --secondary-color: #1e40af;
+        --accent-color: #60a5fa;
+        --background: #f8fafc;
+        --card-bg: #ffffff;
+        --text-primary: #1e293b;
+        --text-secondary: #475569;
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .login-container {
+        width: 100%;
+        max-width: 400px;
+        margin: 20px;
+        background: var(--card-bg);
+        border-radius: 24px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        position: relative;
+      }
+
+      .login-header {
+        padding: 2rem;
+        text-align: center;
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        color: white;
+      }
+
+      .login-header h1 {
+        margin: 0;
+        font-size: 1.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .wand-icon {
+        font-size: 1.5em;
+        color: var(--accent-color);
+        filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+      }
+
+      .login-content {
+        padding: 2rem;
+      }
+
+      .login-tabs {
+        display: flex;
+        margin-bottom: 2rem;
+        border-radius: 12px;
+        background: var(--background);
+        padding: 4px;
+        position: relative;
+      }
+
+      .tab-btn {
+        flex: 1;
+        padding: 1rem;
+        border: none;
+        background: none;
+        font-weight: 600;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.3s;
+        position: relative;
+        z-index: 1;
+      }
+
+      .tab-btn.active {
+        color: white;
+      }
+
+      .tab-slider {
+        position: absolute;
+        height: calc(100% - 8px);
+        width: calc(50% - 4px);
+        border-radius: 8px;
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        top: 4px;
+        left: 4px;
+        transition: transform 0.3s ease;
+      }
+
+      .tab-slider.register {
+        transform: translateX(100%);
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+        position: relative;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 1rem;
+        padding-left: 3rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        background: var(--background);
+      }
+
+      .form-group i {
+        position: absolute;
+        left: 1rem;
+        top: 2.7rem;
+        color: var(--text-secondary);
+        transition: all 0.3s;
+      }
+
+      .form-group input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        background: white;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+      }
+
+      .form-group input:focus + i {
+        color: var(--primary-color);
+      }
+
+      button[type="submit"] {
+        width: 100%;
+        padding: 1rem;
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      button[type="submit"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+      }
+
+      .error-message {
+        color: #dc2626;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .back-to-home {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        color: white;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        transition: all 0.3s;
+      }
+
+      .back-to-home:hover {
+        transform: translateX(-4px);
+      }
+    </style>
+  </head>
+  <body>
+    <a href="index.html" class="back-to-home">
+      <i class="fas fa-arrow-left"></i>
+      Back to Home
+    </a>
+
+    <div class="login-container">
+      <div class="login-header">
+        <h1>
+          <i class="fas fa-wand-magic-sparkles wand-icon"></i>
+          MIDAS: Team Portal
+        </h1>
+      </div>
+
+      <div class="login-content">
+        <div class="login-tabs">
+          <div class="tab-slider"></div>
+          <button class="tab-btn active" data-tab="login">Sign In</button>
+          <button class="tab-btn" data-tab="register">Register</button>
+        </div>
+
+        <form id="loginForm" class="tab-content">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="loginEmail" required />
+            <i class="fas fa-envelope"></i>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="loginPassword" required />
+            <i class="fas fa-lock"></i>
+          </div>
+          <button type="submit">
+            <i class="fas fa-sign-in-alt"></i>
+            Sign In
+          </button>
+          <div class="error-message" id="loginError"></div>
+        </form>
+
+        <form id="registerForm" class="tab-content" style="display: none">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="registerEmail" required />
+            <i class="fas fa-envelope"></i>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="registerPassword" required />
+            <i class="fas fa-lock"></i>
+          </div>
+          <div class="form-group">
+            <label>Confirm Password</label>
+            <input type="password" id="confirmPassword" required />
+            <i class="fas fa-lock"></i>
+          </div>
+          <button type="submit">
+            <i class="fas fa-user-plus"></i>
+            Create Account
+          </button>
+          <div class="error-message" id="registerError"></div>
+        </form>
+      </div>
+    </div>
+
+    <script type="module">
+      import { userManager, UserRoles } from "./js/userManager.js";
+
+      // Tab switching with slider animation
+      document.querySelectorAll(".tab-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+          document
+            .querySelectorAll(".tab-btn")
+            .forEach((btn) => btn.classList.remove("active"));
+          button.classList.add("active");
+
+          const slider = document.querySelector(".tab-slider");
+          if (button.dataset.tab === "register") {
+            slider.classList.add("register");
+          } else {
+            slider.classList.remove("register");
+          }
+
+          document.querySelectorAll(".tab-content").forEach((content) => {
+            content.style.display = "none";
+          });
+          document.getElementById(`${button.dataset.tab}Form`).style.display =
+            "block";
+        });
+      });
+
+      // Form submissions
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const email = document.getElementById("loginEmail").value;
+          const password = document.getElementById("loginPassword").value;
+
+          try {
+            await userManager.login(email, password);
+            window.location.href = "index.html";
+          } catch (error) {
+            document.getElementById("loginError").innerHTML = `
+                    <i class="fas fa-exclamation-circle"></i>
+                    ${error.message}
+                `;
+          }
+        });
+
+      document
+        .getElementById("registerForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const email = document.getElementById("registerEmail").value;
+          const password = document.getElementById("registerPassword").value;
+          const confirmPassword =
+            document.getElementById("confirmPassword").value;
+
+          if (password !== confirmPassword) {
+            document.getElementById("registerError").innerHTML = `
+                    <i class="fas fa-exclamation-circle"></i>
+                    Passwords do not match
+                `;
+            return;
+          }
+
+          try {
+            await userManager.register(email, password, UserRoles.TEAM_MEMBER);
+            window.location.href = "index.html";
+          } catch (error) {
+            document.getElementById("registerError").innerHTML = `
+                    <i class="fas fa-exclamation-circle"></i>
+                    ${error.message}
+                `;
+          }
+        });
+    </script>
+  </body>
+</html>

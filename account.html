@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Account - CSV Processing Center</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="with-sidebar">
+    <div class="sidebar">
+        <div class="logo-container">
+            <img src="logo.png" alt="Company Logo"><p>Midas Portal</p>
+        </div>
+        <nav class="nav-menu">
+            <a href="index.html" class="nav-item">
+                <i class="fas fa-home"></i>
+                Dashboard
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-file-csv"></i>
+                Process Files
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-history"></i>
+                History
+            </a>
+            <a href="account.html" class="nav-item active">
+                <i class="fas fa-user"></i>
+                My Account
+            </a>
+        </nav>
+    </div>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <h1 class="page-title">My Account</h1>
+        </div>
+
+        <div class="card account-card">
+            <div class="profile-header">
+                <div class="user-avatar" id="profileInitials">JD</div>
+                <div>
+                    <h2 class="card-title" id="profileName">John Doe</h2>
+                    <div class="user-role" id="profileRole">Administrator</div>
+                </div>
+            </div>
+
+            <form id="profileForm" class="edit-form">
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" name="fullName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i>
+                        Save Changes
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="window.location.href='index.html'">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+
+            <div id="userListContainer" class="user-management-section">
+                <h2 class="section-title">
+                    <i class="fas fa-users"></i>
+                    User Management
+                </h2>
+                <div id="userList" class="user-list"></div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeAccount } from './js/pages/account.js';
+        import { userManager, UserRoles } from './js/userManager.js';
+
+        function displayUserList() {
+            const users = userManager.getUsers();
+            const currentUser = userManager.getCurrentUser();
+            
+            const userListHtml = users.map(user => `
+                <div class="user-card">
+                    <div class="user-info">
+                        <i class="fas fa-user"></i>
+                        <div>
+                            <h3>${user.email}</h3>
+                            <small>Created: ${new Date(user.created).toLocaleDateString()}</small>
+                        </div>
+                    </div>
+                    <select class="role-select" onchange="updateUserRole('${user.email}', this.value)" 
+                            ${user.email === currentUser.email ? 'disabled' : ''}>
+                        ${Object.values(UserRoles).map(role => `
+                            <option value="${role}" ${user.role === role ? 'selected' : ''}>
+                                ${role}
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
+            `).join('');
+            
+            document.getElementById('userList').innerHTML = userListHtml;
+        }
+
+        window.updateUserRole = function(email, newRole) {
+            try {
+                userManager.updateUserRole(email, newRole);
+                displayUserList();
+            } catch (error) {
+                alert(error.message);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeAccount();
+            displayUserList();
+        });
+    </script>
+</body>
+</html> 

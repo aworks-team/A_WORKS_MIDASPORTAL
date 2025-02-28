@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Processing Center</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="with-sidebar">
+    <div class="sidebar">
+        <div class="logo-container">
+            <img src="logo.png" alt="Company Logo">
+            <p>Midas Portal</p>
+        </div>
+        <nav class="nav-menu">
+            <a href="#" class="nav-item active" onclick="showPage('dashboard')">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="#" class="nav-item" onclick="showPage('processFiles')">
+                <i class="fas fa-file-csv"></i> Process Files
+            </a>
+            <a href="#" class="nav-item" onclick="showPage('bolProcessor')">
+                <i class="fas fa-file-pdf"></i> BOL Processor
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-history"></i> History
+            </a>
+            <a href="account.html" class="nav-item">
+                <i class="fas fa-user"></i> My Account
+            </a>
+            <button id="logoutBtn" class="nav-item logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </nav>
+    </div>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <h1 class="page-title">CSV Processing Center</h1>
+            <div class="user-profile" onclick="window.location.href='account.html'">
+                <div class="user-avatar" id="userInitials">JD</div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">John Doe</div>
+                    <div class="user-role" id="userRole">Administrator</div>
+                </div>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+
+        <!-- Dashboard Page -->
+        <div id="dashboard" class="content-page">
+            <div class="card">
+                <h2>Welcome to Midas Portal</h2>
+                <p>Manage and process your files seamlessly.</p>
+            </div>
+        </div>
+
+        <!-- Process Files Page -->
+        <div id="processFiles" class="content-page" style="display: none;">
+            <div class="card">
+                <h2>Process New File</h2>
+                <form id="uploadForm">
+                    <div class="form-group">
+                        <label>Select a CSV File</label>
+                        <div class="file-input-wrapper">
+                            <label class="file-input-button">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span id="file-name">Choose a file or drag it here</span>
+                            </label>
+                            <input type="file" id="csvFile" name="csvFile" accept=".csv,.xlsx,.xls" required style="display: none;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>File Type</label>
+                        <select id="fileType" name="fileType" required>
+                            <option value="">Select File Type</option>
+                            <option value="943">943</option>
+                            <option value="940">940</option>
+                            <option value="832">832</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Company</label>
+                        <select id="company" required>
+                            <option value="">Select Company</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-upload"></i> Process File
+                    </button>
+                </form>
+                <div id="status"></div>
+            </div>
+        </div>
+
+        <!-- BOL Processor Page -->
+        <!-- BOL Processor Page -->
+        <div id="bolProcessor" class="content-page" style="display: none;">
+            <div class="card">
+                <h2>BOL Processor</h2>
+
+                <!-- Loading Spinner -->
+                <div id="iframeLoader" style="text-align: center; padding: 20px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i> Loading...
+                </div>
+
+                <!-- iFrame -->
+                <iframe id="bolProcessorFrame" 
+                    src="https://pdf-bol-extractor-flask-app-server.onrender.com" 
+                    width="100%" height="600px" frameborder="0"
+                    onload="hideIframeLoader()">
+                </iframe>
+            </div>
+        </div>
+
+        <div id="manualInstructions"></div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script type="module">
+        import { initializePage } from './js/pages/index.js';
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+    <script>
+        function showPage(pageId) {
+            document.querySelectorAll('.content-page').forEach(page => page.style.display = 'none');
+            document.getElementById(pageId).style.display = 'block';
+
+            // Update active menu item
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        function hideIframeLoader() {
+            document.getElementById("iframeLoader").style.display = "none";
+        }
+    </script>
+   
+
+</body>
+
+</html>
