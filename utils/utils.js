@@ -160,6 +160,55 @@ const utils = {
 
             // If the 4th decimal place is 0, return 3 decimal places
             return formatted.endsWith('0') ? converted.toFixed(3) : formatted;
+        },
+
+        processDimensions(dimensionStr, options = {}) {
+            if (!dimensionStr) return Array(options.maxDimensions || 3).fill('');
+            
+            const defaultOptions = {
+                separator: 'x',
+                numbersOnly: true,
+                maxDimensions: 3,
+                precision: 2
+            };
+            
+            const opts = { ...defaultOptions, ...options };
+            const cleanedStr = utils.text.cleanupSpecialCharacters(dimensionStr);
+            
+            // Create a regex pattern based on the separator
+            const separatorPattern = new RegExp(`\\s*${opts.separator}\\s*`);
+            const dimensionParts = cleanedStr.split(separatorPattern);
+            
+            const result = [];
+            
+            for (let i = 0; i < opts.maxDimensions; i++) {
+                if (i >= dimensionParts.length) {
+                    result.push('');
+                    continue;
+                }
+                
+                let dimension = dimensionParts[i].trim();
+                
+                if (opts.numbersOnly) {
+                    // Extract only numeric values (including decimal points)
+                    const matches = dimension.match(/[\d.]+/g);
+                    dimension = matches && matches.length > 0 ? matches[0] : '';
+                    
+                    if (dimension && opts.precision !== null) {
+                        // Format to specified precision if dimension is a valid number
+                        const numValue = parseFloat(dimension);
+                        if (!isNaN(numValue)) {
+                            dimension = numValue.toFixed(opts.precision);
+                            // Remove trailing zeros after decimal point
+                            dimension = dimension.replace(/\.?0+$/, '');
+                        }
+                    }
+                }
+                
+                result.push(dimension);
+            }
+            
+            return result;
         }
     }
 };
