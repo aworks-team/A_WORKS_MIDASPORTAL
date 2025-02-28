@@ -1,0 +1,21 @@
+on:
+  push:
+    branches:
+      - main
+name: A+Works Midas Portal Website
+jobs:
+  web-deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get latest code
+        uses: actions/checkout@v3
+
+      - name: Sync files via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ftp.hm7.446.mytemp.website
+          username: ${{ secrets.FTPUSERNAME }}
+          password: ${{ secrets.FTPPASSWORD }}
+          protocol: ftp
+          server-dir: /
