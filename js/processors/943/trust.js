@@ -1,110 +1,86 @@
-const trust943Processor = {
-    // Helper function to generate Excel-style column labels
-    getExcelColumnLabels(n) {
-        const labels = [];
-        for (let i = 0; i < n; i++) {
-            let dividend = i;
-            let columnLabel = '';
-            while (dividend >= 0) {
-                const modulo = dividend % 26;
-                columnLabel = String.fromCharCode(65 + modulo) + columnLabel;
-                dividend = Math.floor(dividend / 26) - 1;
-            }
-            labels.push(columnLabel);
-        }
-        return labels;
-    },
+import utils from "../../../utils/utils.js";
 
-    // Helper function to sanitize strings
-    sanitizeString(str) {
-        if (!str) return '';
-        str = str.toString();
-        return str
-            .replace(/[\u2018\u2019]/g, "'")
-            .replace(/[\u201C\u201D]/g, '"')
-            .replace(/[\u2013\u2014]/g, '-')
-            .replace(/\u2026/g, '...')
-            .replace(/[^\x00-\x7F]/g, '')
-            .trim();
+const trust943Processor = {
+    // Define static column mappings as a class property for better organization
+    staticColumnMappings: {
+        'B': 'TRUST'
+    },
+    
+    // Define dynamic column mappings for cleaner implementation
+    dynamicColumnMappings: {
+        'A': 'IN_FUNC',
+        'D': 'IN_PO',
+        'F': 'IN_TOFACILITY',
+        'H': 'IN_PRIORITY',
+        'J': 'IN_REFERENCE',
+        'BH': 'IN_ITEMENTERED',
+        'BI': 'IN_LOTNUMBER',
+        'BJ': 'IN_UOMENTERED',
+        'BK': 'IN_QTYENTERED',
+        'CU': 'IN_DTLPASSTHRUNUM10'
     },
 
     process(data) {
-        let sheet1Data;
+        let sheet1Data = utils.excel.getSheetData(data);
 
-        if (data[0] && Array.isArray(data[0])) {
-            // CSV file case
-            sheet1Data = data;
-        } else {
-            // Excel file case - find Sheet1
-            const workbook = data;
-            const sheet1Name = workbook.SheetNames[0] || 'Sheet1'; // Get first sheet
-            sheet1Data = XLSX.utils.sheet_to_json(workbook.Sheets[sheet1Name], { header: 1 });
-
-            if (!sheet1Data) {
-                throw new Error("Sheet1 not found in the workbook");
-            }
+        // Validate data has at least a header row
+        if (!sheet1Data || sheet1Data.length === 0) {
+            throw new Error("No data found in the sheet");
         }
 
-        // Ensure we have enough rows
-        if (!sheet1Data || sheet1Data.length < 2) {
-            throw new Error("File doesn't have enough rows (minimum 2 required)");
+        // Get header row and find column indices using normalized comparison
+        const headers = sheet1Data[0].map(header => utils.text.cleanHeader(header));
+        
+        // Build column indices object dynamically from mappings
+        const columnIndices = {};
+        Object.entries(this.dynamicColumnMappings).forEach(([_, headerName]) => {
+            columnIndices[headerName] = utils.text.findHeaderIndex(headers, headerName);
+        });
+
+        // Validate required headers exist
+        const missingHeaders = Object.entries(columnIndices)
+            .filter(([_, index]) => index === -1)
+            .map(([header]) => header);
+
+        if (missingHeaders.length > 0) {
+            throw new Error(`Required headers not found: ${missingHeaders.join(', ')}`);
         }
 
-        // Skip header row (start from index 1)
-        const dataRows = sheet1Data.slice(1)
-            .filter(row => row.some(cell => cell !== null && cell !== '')); // Filter empty rows
-
-        const numRows = dataRows.length;
-        const labels = this.getExcelColumnLabels(200);
-        const result = Array(numRows).fill().map(() => Array(labels.length).fill(''));
-
-        for (let row = 0; row < numRows; row++) {
-            // Static values
-            result[row][labels.indexOf('A')] = 'A';
-            result[row][labels.indexOf('B')] = 'TRUST';
-            result[row][labels.indexOf('F')] = 'LYN';
-            result[row][labels.indexOf('H')] = 'A';
-            result[row][labels.indexOf('BJ')] = 'EA';
-
-            // Dynamic mappings
-            if (dataRows[row][3]) // Column D from D
-                result[row][labels.indexOf('D')] = this.sanitizeString(dataRows[row][3]);
-
-            if (dataRows[row][5]) // Column F from F
-                result[row][labels.indexOf('F')] = this.sanitizeString(dataRows[row][5]);
-
-            if (dataRows[row][7]) // Column H from H
-                result[row][labels.indexOf('H')] = this.sanitizeString(dataRows[row][7]);
-
-            if (dataRows[row][9]) // Column J from J
-                result[row][labels.indexOf('J')] = this.sanitizeString(dataRows[row][9]);
-
-            // Map BH, BI, BJ, BK columns using labels array to find correct indices
-            const bhIndex = labels.indexOf('BH');
-            if (dataRows[row][bhIndex]) {
-                result[row][bhIndex] = this.sanitizeString(dataRows[row][bhIndex]);
-            }
-
-            const biIndex = labels.indexOf('BI');
-            if (dataRows[row][biIndex]) {
-                result[row][biIndex] = this.sanitizeString(dataRows[row][biIndex]);
-            }
-
-            const bjIndex = labels.indexOf('BJ');
-            if (dataRows[row][bjIndex]) {
-                result[row][bjIndex] = this.sanitizeString(dataRows[row][bjIndex]);
-            }
-
-            const bkIndex = labels.indexOf('BK');
-            if (dataRows[row][bkIndex]) {
-                result[row][bkIndex] = this.sanitizeString(dataRows[row][bkIndex]);
-            }
-
-            // Sequential numbering for outgoing column CU
-            result[row][labels.indexOf('CU')] = row + 1; // Assign sequential number starting from 1
+        // Process all rows except header
+        const dataWithoutHeader = sheet1Data.slice(1);
+        
+        // If no data rows, return empty result
+        if (dataWithoutHeader.length === 0) {
+            return [];
         }
 
-        return result;
+        const labels = utils.excel.getExcelColumnLabels(200);
+        
+        // Create result array with exact same number of rows as input data
+        const result = Array(dataWithoutHeader.length).fill().map(() => Array(labels.length).fill(''));
+
+        // Process each row that has actual data
+        dataWithoutHeader.forEach((rowData, rowIndex) => {
+            // Skip processing if row is empty or contains only empty cells
+            if (!rowData || rowData.every(cell => !cell)) {
+                return;
+            }
+            
+            // Apply static values for this row
+            Object.entries(this.staticColumnMappings).forEach(([column, value]) => {
+                result[rowIndex][labels.indexOf(column)] = value;
+            });
+
+            // Process dynamic columns from input data
+            Object.entries(this.dynamicColumnMappings).forEach(([outColumn, inHeader]) => {
+                if (rowData[columnIndices[inHeader]] !== undefined && rowData[columnIndices[inHeader]] !== null) {
+                    result[rowIndex][labels.indexOf(outColumn)] = utils.text.cleanupSpecialCharacters(rowData[columnIndices[inHeader]]);
+                }
+            });
+        });
+
+        // Filter out any empty rows from the result
+        return result.filter(row => row.some(cell => cell !== ''));
     }
 };
 
