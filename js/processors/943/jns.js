@@ -1,3 +1,5 @@
+import utils from '../../../utils/utils.js';
+
 const jnsProcessor = {
   // Helper function to generate Excel-style column labels
   getExcelColumnLabels(n) {
@@ -44,74 +46,75 @@ const jnsProcessor = {
     return container.toString().split("/")[0]; // Take only the part before '/'
   },
 
+  // Define static column mappings
+  staticColumnMappings: {
+    'A': 'A',
+    'B': 'JNS',
+    'F': 'LYN',
+    'H': 'A',
+    'BJ': 'EA'
+  },
+
+  // Define dynamic column mappings
+  dynamicColumnMappings: {
+    'D': 'PO',
+    'J': 'CONTAINER#',
+    'BH': 'Style',
+    'BK': 'PCS'
+  },
+
   process(data) {
-    let sheet1Data;
+    // Get sheet data using utils
+    const sheetData = utils.excel.getSheetData(data);
 
-    if (data[0] && Array.isArray(data[0])) {
-      // CSV file case
-      sheet1Data = data;
-    } else {
-      // Excel file case - find Sheet1
-      const workbook = data;
-      const sheet1Name = workbook.SheetNames[0] || 'Sheet1'; // Get first sheet
-      sheet1Data = XLSX.utils.sheet_to_json(workbook.Sheets[sheet1Name], { header: 1 });
+    // Get headers from row 9 (index 8) and clean them
+    const headers = (sheetData[8] || []).map(header => utils.text.cleanHeader(header));
 
-      if (!sheet1Data) {
-        throw new Error("Sheet1 not found in the workbook");
-      }
-    }
+    // Build column indices object dynamically from mappings
+    const columnIndices = {};
+    Object.entries(this.dynamicColumnMappings).forEach(([_, headerName]) => {
+      columnIndices[headerName] = utils.text.findHeaderIndex(headers, headerName);
+    });
 
-    // Ensure we have enough rows
-    if (!sheet1Data || sheet1Data.length < 10) {
-      throw new Error("File doesn't have enough rows (minimum 10 required)");
-    }
+    // Get data rows starting from row 10 (index 9)
+    const dataRows = sheetData.slice(9);
 
-    // Get headers from row 9 (index 8)
-    const headers = sheet1Data[8];
+    // Get column labels
+    const labels = utils.excel.getExcelColumnLabels(200);
 
-    // Find header indices
-    const poIndex = headers.findIndex((header) => header === "PO");
-    const containerIndex = headers.findIndex((header) => header === "CONTAINER#");
-    const styleIndex = headers.findIndex((header) => header === "STYLE");
-    const pcsIndex = headers.findIndex((header) => header === "PCS");
+    // Process non-empty rows
+    const result = dataRows
+      .filter(row => row && row.some(cell => cell !== null && cell !== undefined && cell !== ''))
+      .map((row, index) => {
+        const outputRow = Array(labels.length).fill('');
 
-    // Skip headers and start from row 10 (index 9)
-    const dataWithoutHeader = sheet1Data.slice(9, 14); // Limit to 5 rows
+        // Apply static values
+        Object.entries(this.staticColumnMappings).forEach(([column, value]) => {
+          outputRow[labels.indexOf(column)] = value;
+        });
 
-    // Create empty result array with enough columns
-    const numRows = dataWithoutHeader.length;
-    const labels = this.getExcelColumnLabels(200);
-    const result = Array(numRows).fill().map(() => Array(labels.length).fill(""));
+        // Process dynamic columns from input data
+        Object.entries(this.dynamicColumnMappings).forEach(([outColumn, inHeader]) => {
+          const headerIndex = columnIndices[inHeader];
+          if (headerIndex !== -1 && row[headerIndex]) {
+            let value = row[headerIndex].toString();
 
-    // Process each row
-    for (let row = 0; row < numRows; row++) {
-      // Static columns
-      result[row][labels.indexOf("A")] = "A";
-      result[row][labels.indexOf("B")] = "JNS";
-      result[row][labels.indexOf("F")] = "LYN";
-      result[row][labels.indexOf("H")] = "A";
-      result[row][labels.indexOf("BJ")] = "EA";
+            // Apply specific transformations based on column
+            if (outColumn === 'D') {
+              value = value.replace(/^0+/, ''); // Remove leading zeros for PO
+            } else if (outColumn === 'J') {
+              value = value.split('/')[0]; // Take part before '/' for container
+            }
 
-      // Dynamic columns
-      if (poIndex !== -1 && dataWithoutHeader[row][poIndex]) {
-        result[row][labels.indexOf("D")] = this.cleanPONumber(dataWithoutHeader[row][poIndex]);
-      }
+            outputRow[labels.indexOf(outColumn)] = utils.text.cleanupSpecialCharacters(value);
+          }
+        });
 
-      if (containerIndex !== -1 && dataWithoutHeader[row][containerIndex]) {
-        result[row][labels.indexOf("J")] = this.cleanContainerNumber(dataWithoutHeader[row][containerIndex]);
-      }
+        // Sequential number (1-based index)
+        outputRow[labels.indexOf('CU')] = index + 1;
 
-      if (styleIndex !== -1 && dataWithoutHeader[row][styleIndex]) {
-        result[row][labels.indexOf("BH")] = this.sanitizeString(dataWithoutHeader[row][styleIndex]);
-      }
-
-      if (pcsIndex !== -1 && dataWithoutHeader[row][pcsIndex]) {
-        result[row][labels.indexOf("BK")] = this.sanitizeString(dataWithoutHeader[row][pcsIndex]);
-      }
-
-      // Sequential number in Column CU
-      result[row][labels.indexOf("CU")] = row + 1;
-    }
+        return outputRow;
+      });
 
     return result;
   },
