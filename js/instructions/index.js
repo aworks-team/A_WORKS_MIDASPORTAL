@@ -14,6 +14,7 @@ import { can940Instructions } from "./940/can.js";
 import { central832Instructions } from "./832/central.js";
 import { jns832Instructions } from "./832/jns.js";
 import { can943Instructions } from "./943/can.js";
+import { prime940Instructions } from "./940/prime.js";
 // Export the instructions object
 
 export const instructions = {
@@ -30,7 +31,8 @@ export const instructions = {
         Allurai: allurai940Instructions,
         "S3 Design": s3design940Instructions,
         Sensual: sensual940Instructions,
-        Can: can940Instructions
+        Can: can940Instructions,
+        Prime: prime940Instructions,
     },
     "832": {
         Trust: trust832Instructions,
