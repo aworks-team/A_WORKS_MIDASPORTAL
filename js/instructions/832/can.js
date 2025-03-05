@@ -1,10 +1,14 @@
 export const can832Instructions = {
     steps: [
         {
-            title: "Sheet Selection",
+            title: "File Structure",
             items: [
-                { text: "Process data from Sheet2 of the Excel file" },
-                { text: "Start from row 6 and process all non-empty rows" }
+                { text: "Process the second sheet of the Excel file" },
+                { text: "Row 5 contains the header row" },
+                { text: "Data processing starts from row 6" },
+                { text: "Output starts from row 1 (no header row in output)" },
+                { text: "Processing stops when a row contains 'Total for Container' or 'Grand Total'" },
+                { text: "Processing also stops when column A value changes from previous row" }
             ]
         },
         {
@@ -37,16 +41,20 @@ export const can832Instructions = {
             ]
         },
         {
-            title: "Column Mapping Rules",
+            title: "Data Mapping Rules",
             items: [
-                { text: "Column D: Combine values from F,G,H (merged cells)" },
-                { text: "Column E: Combine values from J,K,L,M (merged cells, if > 40 chars use 'NA')" },
-                { text: "Column N: Copy from Column N" },
-                { text: "Column O: Copy from Column P" },
-                { text: "Column Q: Copy from Column W" },
-                { text: "Column R: Combine values from Z,AA (merged cells)" },
-                { text: "Column S: Combine values from X,Y (merged cells)" }
+                { text: "Column D: Map from 'Item #' header" },
+                { text: "Column E: Map from 'Item Description' header (if exceeds 40 characters, replace with 'NA')" },
+                { text: "Column N: Map from 'Qty Ctn' header" },
+                { text: "Column O: Map from 'Carton Weight' header" },
+                { text: "Column Q: Map from 'Carton Length' header" },
+                { text: "Column R: Map from 'Carton Width' header" },
+                { text: "Column S: Map from 'Carton Height' header" }
             ]
         }
-    ]
+    ],
+    sampleFiles: {
+        incoming: "https://docs.google.com/spreadsheets/d/sample-incoming-file-id",
+        outgoing: "https://docs.google.com/spreadsheets/d/sample-outgoing-file-id"
+    }
 }; 

@@ -1,121 +1,137 @@
+import utils from '../../../utils/utils.js';
+
 const can832Processor = {
-    getExcelColumnLabels(n) {
-        const labels = [];
-        for (let i = 0; i < n; i++) {
-            let dividend = i;
-            let columnLabel = '';
-            while (dividend >= 0) {
-                const modulo = dividend % 26;
-                columnLabel = String.fromCharCode(65 + modulo) + columnLabel;
-                dividend = Math.floor(dividend / 26) - 1;
-            }
-            labels.push(columnLabel);
-        }
-        return labels;
+    // Define static column mappings
+    staticColumnMappings: {
+        'A': 'ITM',
+        'B': 'A',
+        'C': 'CAN',
+        'G': 'EA',
+        'H': '1',
+        'I': '1',
+        'M': 'CS',
+        'T': 'B',
+        'U': 'FULL',
+        'V': 'PLT',
+        'W': 'K',
+        'X': '1',
+        'AD': 'B',
+        'AE': 'FULL',
+        'AF': 'PLT',
+        'AG': 'K',
+        'AH': '100',
+        'AN': 'B',
+        'AO': 'FULL',
+        'AP': 'PLT',
+        'EB': 'ACTV',
+        'GB': 'B',
+        'GE': 'FULL',
+        'GF': 'CTN'
     },
 
-    sanitizeString(str) {
-        if (!str) return '';
-        str = str.toString();
-        return str
-            .replace(/[\u2018\u2019]/g, "'")
-            .replace(/[\u201C\u201D]/g, '"')
-            .replace(/[\u2013\u2014]/g, '-')
-            .replace(/\u2026/g, '...')
-            .replace(/[^\x00-\x7F]/g, '')
-            .trim();
+    // Define dynamic column mappings
+    dynamicColumnMappings: {
+        'D': 'Item #',
+        'E': 'Item Description',
+        'N': 'Qty Ctn',
+        'O': 'Carton Weight',
+        'Q': 'Carton Length',
+        'R': 'Carton Width',
+        'S': 'Carton Height'
     },
 
     process(data) {
-        let sheet2Data;
+        // Get workbook
+        const workbook = data;
 
-        if (data[0] && Array.isArray(data[0])) {
-            // CSV file case - we can't handle multiple sheets
-            console.warn("CSV files don't support multiple sheets. Please use Excel format.");
-            sheet2Data = data;
-        } else {
-            // Excel file case - find Sheet2
-            const workbook = data;
-            const sheet2Name = workbook.SheetNames[1] || 'Sheet2'; // Get second sheet or named 'Sheet2'
-            sheet2Data = XLSX.utils.sheet_to_json(workbook.Sheets[sheet2Name], { header: 1 });
-
-            if (!sheet2Data) {
-                throw new Error("Sheet2 not found in the workbook");
-            }
+        // Check if workbook has at least 2 sheets
+        if (!workbook || !workbook.SheetNames || workbook.SheetNames.length < 2) {
+            throw new Error("Workbook must have at least 2 sheets");
         }
 
-        // Ensure we have enough rows
-        if (!sheet2Data || sheet2Data.length < 6) {
-            throw new Error("Sheet2 doesn't have enough rows (minimum 6 required)");
-        }
+        // Get the second sheet
+        const sheet2Name = workbook.SheetNames[1];
+        const sheet2 = workbook.Sheets[sheet2Name];
 
-        const labels = this.getExcelColumnLabels(200);
+        // Convert sheet to array of arrays
+        const sheet2Data = XLSX.utils.sheet_to_json(sheet2, { header: 1 });
+
+        // Get headers from row 5 (index 4) and clean them
+        const headers = (sheet2Data[4] || []).map(header =>
+            header ? utils.text.cleanHeader(header) : '');
+
+        // Build column indices object dynamically from mappings
+        const columnIndices = {};
+        Object.entries(this.dynamicColumnMappings).forEach(([_, headerName]) => {
+            columnIndices[headerName] = utils.text.findHeaderIndex(headers, headerName);
+        });
+
+        // Get column labels
+        const labels = utils.excel.getExcelColumnLabels(200);
+
+        // Process rows starting from row 6 (index 5)
         const result = [];
 
-        // Determine the cutoff row based on relevant data
-        let cutoffRow = sheet2Data.length; // Start with the maximum possible
         for (let rowIndex = 5; rowIndex < sheet2Data.length; rowIndex++) {
             const currentRow = sheet2Data[rowIndex];
-            const nextRow = sheet2Data[rowIndex + 1];
 
-            // Check if the current row matches the next row in column A
-            if (currentRow[0] !== nextRow?.[0]) {
-                cutoffRow = rowIndex + 1; // Mark the end of relevant data
+            // Skip empty rows
+            if (!currentRow || !currentRow.some(cell => cell !== null && cell !== undefined && cell !== '')) {
+                continue;
+            }
+
+            // Check for end of data markers
+            if (currentRow[0] && (
+                String(currentRow[0]).includes('Total for Container') ||
+                String(currentRow[0]).includes('Grand Total')
+            )) {
                 break;
             }
-        }
 
-        // Process rows up to the cutoff
-        for (let rowIndex = 5; rowIndex < cutoffRow; rowIndex++) {
-            const currentRow = sheet2Data[rowIndex];
-
-            const newRow = Array(labels.length).fill('');
-
-            // Static values
-            newRow[labels.indexOf('A')] = 'ITM';
-            newRow[labels.indexOf('B')] = 'A';
-            newRow[labels.indexOf('C')] = 'CAN';
-            newRow[labels.indexOf('G')] = 'EA';
-            newRow[labels.indexOf('H')] = '1';
-            newRow[labels.indexOf('I')] = '1';
-            newRow[labels.indexOf('M')] = 'CS';
-            newRow[labels.indexOf('T')] = 'B';
-            newRow[labels.indexOf('U')] = 'FULL';
-            newRow[labels.indexOf('V')] = 'PLT';
-            newRow[labels.indexOf('W')] = 'K';
-            newRow[labels.indexOf('X')] = '1';
-            newRow[labels.indexOf('AD')] = 'B';
-            newRow[labels.indexOf('AE')] = 'FULL';
-            newRow[labels.indexOf('AF')] = 'PLT';
-            newRow[labels.indexOf('AG')] = 'K';
-            newRow[labels.indexOf('AH')] = '100';
-            newRow[labels.indexOf('AN')] = 'B';
-            newRow[labels.indexOf('AO')] = 'FULL';
-            newRow[labels.indexOf('AP')] = 'PLT';
-            newRow[labels.indexOf('EB')] = 'ACTV';
-            newRow[labels.indexOf('GB')] = 'B';
-            newRow[labels.indexOf('GE')] = 'FULL';
-            newRow[labels.indexOf('GF')] = 'CTN';
-
-            // Copy values from incoming to outgoing
-            newRow[labels.indexOf('D')] = this.sanitizeString(currentRow[5]); // Column F to D
-            newRow[labels.indexOf('E')] = this.sanitizeString(currentRow[9]); // Column J to E
-            if (newRow[labels.indexOf('E')].length > 40) {
-                newRow[labels.indexOf('E')] = 'NA'; // Replace with 'NA' if exceeds 40 characters
+            // Check if next row exists and has a different value in column A
+            const nextRow = sheet2Data[rowIndex + 1];
+            if (nextRow && currentRow[0] !== nextRow[0]) {
+                // Process this row and then break
+                const outputRow = this.processRow(currentRow, labels, columnIndices);
+                result.push(outputRow);
+                break;
             }
-            newRow[labels.indexOf('N')] = this.sanitizeString(currentRow[13]); // Column N to N
-            newRow[labels.indexOf('O')] = this.sanitizeString(currentRow[15]); // Column P to O
-            newRow[labels.indexOf('Q')] = this.sanitizeString(currentRow[22]); // Column W to Q
-            newRow[labels.indexOf('R')] = this.sanitizeString(currentRow[25]) + ' ' + this.sanitizeString(currentRow[26]); // Column Z,AA to R
-            newRow[labels.indexOf('S')] = this.sanitizeString(currentRow[23]) + ' ' + this.sanitizeString(currentRow[24]); // Column X,Y to S
 
-            // Only push the newRow if it contains valid data
-            if (newRow.some(cell => cell !== '')) {
-                result.push(newRow);
-            }
+            // Process the current row
+            const outputRow = this.processRow(currentRow, labels, columnIndices);
+            result.push(outputRow);
         }
 
         return result;
+    },
+
+    processRow(row, labels, columnIndices) {
+        const outputRow = Array(labels.length).fill('');
+
+        // Apply static values
+        Object.entries(this.staticColumnMappings).forEach(([column, value]) => {
+            outputRow[labels.indexOf(column)] = value;
+        });
+
+        // Process dynamic columns from input data
+        Object.entries(this.dynamicColumnMappings).forEach(([outColumn, inHeader]) => {
+            const headerIndex = columnIndices[inHeader];
+            if (headerIndex !== -1 && row[headerIndex] !== undefined && row[headerIndex] !== null) {
+                let value = row[headerIndex].toString();
+
+                // Apply specific transformations based on column
+                if (outColumn === 'E') {
+                    // Check if description exceeds 40 characters
+                    if (value.length > 40) {
+                        value = 'NA';
+                    }
+                }
+
+                outputRow[labels.indexOf(outColumn)] = utils.text.cleanupSpecialCharacters(value);
+            }
+        });
+
+        return outputRow;
     }
 };
 
