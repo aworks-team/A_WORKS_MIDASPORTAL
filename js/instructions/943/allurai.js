@@ -1,6 +1,15 @@
 export const allurai943Instructions = {
     steps: [
         {
+            title: "File Structure",
+            items: [
+                { text: "Row 1 contains the header row" },
+                { text: "Data processing starts from row 2" },
+                { text: "Output starts from row 1 (no header row in output)" },
+                { text: "Only non-empty rows are processed" }
+            ]
+        },
+        {
             title: "Static Values",
             items: [
                 { text: "Column A = 'A'" },
@@ -11,19 +20,13 @@ export const allurai943Instructions = {
             ]
         },
         {
-            title: "Mapping Rules",
+            title: "Data Mapping Rules",
             items: [
-                { text: "Copy Column A to Column D" },
-                { text: "Copy Column B to Column J (remove parentheses, parenthesis contents and special characters)" },
-                { text: "Copy Column C to Column BH" },
-                { text: "Copy Column H to Column BK" }
-            ]
-        },
-        {
-            title: "Final Steps",
-            items: [
-                { text: "Add sequential numbers in Column CU (1, 2, 3, etc.)" },
-                { text: "Skip header row from source file" }
+                { text: "Column D: Map from 'Reference' header" },
+                { text: "Column J: Map from 'Container' header (remove parentheses, parenthesis contents and special characters)" },
+                { text: "Column BH: Map from 'Style' header" },
+                { text: "Column BK: Map from 'Shipped* Carton' header" },
+                { text: "Column CU: Sequential numbering (1, 2, 3, etc.)" }
             ]
         }
     ],
