@@ -120,23 +120,23 @@ const prime940Processor = {
             const itemMatch = line.match(/(DASH\s+[0-9]+(?:\s+[A-Z]+)?\s*-\s*[A-Z0-9/\s-]+(?:\s+BB))/i);
             if (itemMatch) {
                 let description = itemMatch[1].trim();
-                
+
                 // Remove anything starting with "WHITE" from the description
                 const whiteIndex = description.indexOf("WHITE");
                 if (whiteIndex !== -1) {
                     description = description.substring(0, whiteIndex).trim();
                 }
-                
+
                 // Look for quantity by finding numeric values in the text
                 let quantity = '';
-                
+
                 // Try to find a standalone number that might be the quantity
                 const numberMatch = line.match(/\b(\d+)\b/g);
                 if (numberMatch && numberMatch.length > 0) {
                     // Use the last number in the line as it's likely the quantity
                     quantity = numberMatch[numberMatch.length - 1];
                 }
-                
+
                 // If we found the Ordered column, look for numbers in the next few lines
                 if (orderedColumnIndex !== -1 && !quantity) {
                     for (let j = orderedColumnIndex + 1; j < Math.min(orderedColumnIndex + 10, lines.length); j++) {
@@ -149,7 +149,7 @@ const prime940Processor = {
                         }
                     }
                 }
-                
+
                 data.items.push({
                     description: description,
                     quantity: quantity
@@ -159,24 +159,24 @@ const prime940Processor = {
 
         // Extract shipping information using direct pattern matching on the entire text
         console.log("No Ship To info found with standard approach, trying alternative method");
-        
+
         const shipToIndex = lines.findIndex(line => line.match(/^Ship\s+To\s*$/i));
         if (shipToIndex !== -1) {
             // Extract up to 5 lines after "Ship To" as the address components
             const addressLines = lines.slice(shipToIndex + 1, shipToIndex + 6).filter(line => line.trim());
-            
+
             if (addressLines.length > 0) {
                 // First line is typically the company name
                 data.shipTo.name = addressLines[0].trim();
                 console.log("Found company name:", data.shipTo.name);
-                
+
                 // Second line might be care of information (C/O)
                 // Third line is typically the street address
                 if (addressLines.length > 2) {
                     data.shipTo.address = addressLines[2].trim();
                     console.log("Found street address:", data.shipTo.address);
                 }
-                
+
                 // Fourth line typically contains city, state, zip
                 if (addressLines.length > 3) {
                     const cityStateZipMatch = addressLines[3].match(/([^,]+)\s*,\s*([A-Z]{2})\s*(\d{5})/i);
@@ -199,13 +199,13 @@ const prime940Processor = {
                 data.shipTo.name = companyNameMatch[0];
                 console.log("Found company name:", data.shipTo.name);
             }
-            
+
             const streetAddressMatch = text.match(/(\d+\s+AMAZON\.COM\s+BLVD\.)/i);
             if (streetAddressMatch) {
                 data.shipTo.address = streetAddressMatch[1];
                 console.log("Found street address:", data.shipTo.address);
             }
-            
+
             const locationMatch = text.match(/(SHEPHERDSVILLE)\s*,\s*(KY)\s*(\d{5})/i);
             if (locationMatch) {
                 data.shipTo.city = locationMatch[1];
@@ -274,6 +274,10 @@ const prime940Processor = {
         );
         const result = Array(rowCount).fill().map(() => Array(labels.length).fill(''));
 
+        // Get current date in MMDDYY format
+        const now = new Date();
+        const currentDate = `${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${String(now.getFullYear()).slice(-2)}`;
+
         // Process each row
         for (let row = 0; row < rowCount; row++) {
             // Static values
@@ -288,14 +292,14 @@ const prime940Processor = {
             });
 
             // Dynamic values
-            result[row][labels.indexOf('D')] = extractedData.date;
-            
+            result[row][labels.indexOf('D')] = currentDate; // Use current date in MMDDYY format
+
             // Use the appropriate PO number for each row
             result[row][labels.indexOf('E')] = extractedData.poNumbers[row] || extractedData.poNumbers[0] || '';
-            
+
             // Use the appropriate SO number for each row
             result[row][labels.indexOf('O')] = extractedData.soNumbers[row] || extractedData.soNumbers[0] || '';
-            
+
             result[row][labels.indexOf('Q')] = extractedData.shipTo.name;
             result[row][labels.indexOf('S')] = extractedData.shipTo.address;
             result[row][labels.indexOf('U')] = extractedData.shipTo.city;
