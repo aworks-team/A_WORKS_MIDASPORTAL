@@ -18,6 +18,7 @@ const utils = {
         getSheetData(data) {
             if (Array.isArray(data[0])) {
                 return data;
+                
             } else {
                 const workbook = data;
                 const sheetName = workbook.SheetNames[0] || 'Sheet1';
@@ -27,6 +28,70 @@ const utils = {
                 }
                 return sheetData;
             }
+        },
+
+         /**
+         * Find the header row in a sheet by looking for rows that contain the required headers
+         * @param {Array<Array>} data - Sheet data as 2D array
+         * @param {Array<string>} requiredHeaders - List of headers to look for
+         * @returns {Object} - Header row index and column indices
+         */
+         findHeaderRow(data, requiredHeaders) {
+            const maxRowsToCheck = Math.min(50, data.length); // Check up to 20 rows or all rows
+            
+            for (let rowIndex = 0; rowIndex < maxRowsToCheck; rowIndex++) {
+                const potentialHeaderRow = data[rowIndex];
+                if (!potentialHeaderRow || potentialHeaderRow.length === 0) continue;
+                
+                // Clean and normalize the potential header row
+                const cleanedHeaders = potentialHeaderRow.map(header => 
+                    header ? utils.text.cleanHeader(header.toString()) : '');
+                    
+                // Check if this row contains all required headers
+                const columnIndices = {};
+                let allHeadersFound = true;
+                
+                for (const headerName of requiredHeaders) {
+                    const index = utils.text.findHeaderIndex(cleanedHeaders, headerName);
+                    if (index === -1) {
+                        allHeadersFound = false;
+                        break;
+                    }
+                    columnIndices[headerName] = index;
+                }
+                
+                if (allHeadersFound) {
+                    return { headerRowIndex: rowIndex, columnIndices };
+                }
+            }
+            
+            // If we reach here, headers weren't found
+            return { headerRowIndex: -1, columnIndices: {} };
+        },
+
+        /**
+         * Groups data rows by a specific column value
+         * @param {Array} rows - Data rows
+         * @param {number} columnIndex - Index of the column to group by
+         * @returns {Object} - Grouped data by column value
+         */
+        groupDataByColumn(rows, columnIndex) {
+            const groups = {};
+            
+            if (columnIndex === undefined) return { undefined: rows };
+            
+            rows.forEach(row => {
+                const value = row[columnIndex];
+                const key = value !== undefined && value !== null ? value.toString() : 'undefined';
+                
+                if (!groups[key]) {
+                    groups[key] = [];
+                }
+                
+                groups[key].push(row);
+            });
+            
+            return groups;
         }
     },
 
