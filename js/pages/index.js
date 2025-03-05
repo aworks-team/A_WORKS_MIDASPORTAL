@@ -37,7 +37,7 @@ function initializeCompanySelect(fileTypeSelect, companySelect) {
     if (fileType) {
       // Define available companies for each file type
       const companyMap = {
-        940: ["S3 Design", "Allurai", "Sensual", "Can"],
+        940: ["S3 Design", "Allurai", "Sensual", "Can", "Prime"],
         943: ["Allurai", "JNS", "Trust", "Coco", "Central", "Can"],
         832: ["Trust", "Coco", "Allurai", "Central", "JNS", "Can"]
       };
@@ -184,23 +184,47 @@ function initializeFormSubmission(
       reader.onload = async (event) => {
         try {
           let data;
+          const arrayBuffer = event.target.result;
+          
           if (file.name.endsWith(".csv")) {
-            data = Papa.parse(event.target.result, { header: false }).data;
+            // For CSV files
+            const text = new TextDecoder().decode(new Uint8Array(arrayBuffer));
+            data = Papa.parse(text, { header: false }).data;
+          } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
+            // For Excel files
+            data = XLSX.read(new Uint8Array(arrayBuffer), { type: "array" });
+          } else if (file.name.endsWith(".pdf")) {
+            // For PDF files
+            data = arrayBuffer; // Pass the raw buffer for PDF processing
           } else {
-            data = XLSX.read(event.target.result, { type: "binary" });
+            throw new Error("Unsupported file format");
           }
-
+      
           console.log("Data parsed successfully");
-          const processedData = processor(data);
+          
+          // Check if processor function or object with process method
+          let processedData;
+          if (typeof processor === 'function') {
+            processedData = await processor(data);
+          } else if (processor.process) {
+            processedData = await processor.process(data);
+          } else {
+            throw new Error("Invalid processor configuration");
+          }
+          
+          if (!processedData || !Array.isArray(processedData)) {
+            throw new Error("Processor did not return valid data");
+          }
+          
           console.log("Data processed successfully, rows:", processedData.length);
-
+      
           const ws = XLSX.utils.aoa_to_sheet(processedData);
           const wb = XLSX.utils.book_new();
           XLSX.utils.book_append_sheet(wb, ws, "Processed Data");
-
+      
           const fileName = generateFileName(company, fileType);
           XLSX.writeFile(wb, `${fileName}.xlsx`);
-
+      
           statusDiv.innerHTML =
             '<i class="fas fa-check"></i> Processing complete!';
           statusDiv.className = "show success";
@@ -210,14 +234,13 @@ function initializeFormSubmission(
           statusDiv.className = "show error";
         }
       };
-
       reader.onerror = () => {
         statusDiv.innerHTML =
           '<i class="fas fa-exclamation-circle"></i> Error reading file';
         statusDiv.className = "show error";
       };
 
-      reader.readAsBinaryString(file);
+      reader.readAsArrayBuffer(file);
     } catch (error) {
       console.error("Submission error details:", error);
       statusDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;

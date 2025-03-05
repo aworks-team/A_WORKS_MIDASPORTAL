@@ -65,13 +65,13 @@
                 <h2>Process New File</h2>
                 <form id="uploadForm">
                     <div class="form-group">
-                        <label>Select a CSV File</label>
+                        <label>Select a <strong>CSV/PDF/Excel File</strong></label>
                         <div class="file-input-wrapper">
                             <label class="file-input-button">
                                 <i class="fas fa-cloud-upload-alt"></i>
                                 <span id="file-name">Choose a file or drag it here</span>
                             </label>
-                            <input type="file" id="csvFile" name="csvFile" accept=".csv,.xlsx,.xls" required style="display: none;">
+                            <input type="file" id="csvFile" name="csvFile" accept=".csv,.xlsx,.xls,.pdf" required style="display: none;">
                         </div>
                     </div>
 
@@ -125,6 +125,10 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js"></script>
+    <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.worker.min.js";
+    </script>
     <script type="module">
         import { initializePage } from './js/pages/index.js';
         document.addEventListener('DOMContentLoaded', initializePage);
