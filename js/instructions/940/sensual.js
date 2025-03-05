@@ -1,39 +1,65 @@
 export const sensual940Instructions = {
     steps: [
         {
+            title: "File Structure",
+            items: [
+                { text: "Row 1 contains the header row" },
+                { text: "Data processing starts from row 2" },
+                { text: "Output starts from row 1 (no header row in output)" },
+                { text: "Only non-empty rows are processed" }
+            ]
+        },
+        {
             title: "Static Values",
             items: [
                 { text: "Column A = 'A'" },
                 { text: "Column B = 'SENSUAL'" },
-                { text: "Column D = '12302024'" },
                 { text: "Column G = 'LYN'" },
                 { text: "Column K = 'A'" },
                 { text: "Column M = 'L'" },
                 { text: "Column N = 'ROUT'" },
                 { text: "Column P = 'COL'" },
-                { text: "Column U = 'Santa Fe Spring'" },
-                { text: "Column V = 'CA'" },
                 { text: "Column CU = 'EA'" }
             ]
         },
         {
             title: "Dynamic Mappings",
             items: [
-                { text: "Copy Column C from incoming to Column E" },
-                { text: "Copy Column A from incoming to Column O" },
-                { text: "Copy Column G from incoming to Column Q (first two words, capitalized)" },
-                { text: "Copy Column H from incoming to Column S" },
-                { text: "Copy Column K from incoming to Column W" },
-                { text: "Copy Column E from incoming to Column CS" },
-                { text: "Copy Column F from incoming to Column CV" }
+                { text: "Column D = Current date" },
+                { text: "Column E: Map from 'P. O. #' header" },
+                { text: "Column O: Map from 'Num' header" },
+                { text: "Column Q: Map from 'Ship To Address 1' header (with special retailer handling)" },
+                { text: "Column R: Map from 'Ship To Address 2' header" },
+                { text: "Column U: Map from 'Ship To City' header" },
+                { text: "Column V: Map from 'Ship To State' header" },
+                { text: "Column W: Map from 'Ship Zip' header" },
+                { text: "Column CS: Map from 'Item' header" },
+                { text: "Column CV: Map from 'Qty' header" },
+                { text: "Column EH: Sequential numbering (1, 2, 3, etc.)" }
             ]
         },
         {
-            title: "Special Cases",
+            title: "Special Retailer Handling",
             items: [
-                { text: "First two rows of Column AU = '1082025'" },
-                { text: "First two rows of Column AW = '1082025'" },
-                { text: "Column CT: First row = '250684-FA', other rows = 'NA'" }
+                { text: "Column Q: Map from 'Ship To Address 1' header with special handling:" },
+                { text: "- If address contains 'BURLINGTON', use 'BURLINGTON'" },
+                { text: "- If address contains 'TJMAXX' or 'TJ MAXX', use 'TJMAXX'" },
+                { text: "- If address contains 'DDS' or 'DD', use 'DDs'" },
+                { text: "- If address contains 'BEALLS', use 'BEALLS'" },
+                { text: "- If address contains 'ROSS', use 'ROSS'" },
+                { text: "- If address contains 'FASHION NOVA' or 'FASHIONNOVA', use 'FASHION NOVA'" },
+                { text: "- Otherwise, use the original value" },
+                { text: "- Note: All matching is case-insensitive and ignores extra whitespace" }
+            ]
+        },
+        {
+            title: "Date Formatting",
+            items: [
+                { text: "Column AU: Map from 'Ship Date' header and format as MMDDYYYY (e.g., 12/25/2024 becomes 12252024)" },
+                { text: "Column AW: Map from 'CANCEL DATE' header and format as MMDDYYYY (e.g., 01/08/2025 becomes 01082025)" },
+                { text: "Special Excel Date Mappings:" },
+                { text: "- Excel date 45651 maps to 12252024 (December 25, 2024)" },
+                { text: "- Excel date 45665 maps to 01082025 (January 8, 2025)" }
             ]
         }
     ],
