@@ -1,92 +1,95 @@
-const central943Processor = {
-    // Helper function to generate Excel-style column labels
-    getExcelColumnLabels(n) {
-        const labels = [];
-        for (let i = 0; i < n; i++) {
-            let dividend = i;
-            let columnLabel = '';
-            while (dividend >= 0) {
-                const modulo = dividend % 26;
-                columnLabel = String.fromCharCode(65 + modulo) + columnLabel;
-                dividend = Math.floor(dividend / 26) - 1;
-            }
-            labels.push(columnLabel);
-        }
-        return labels;
-    },
+import utils from "../../../utils/utils.js";
 
-    // Helper function to sanitize strings
-    sanitizeString(str) {
-        if (!str) return '';
-        str = str.toString();
-        return str
-            .replace(/[\u2018\u2019]/g, "'")
-            .replace(/[\u201C\u201D]/g, '"')
-            .replace(/[\u2013\u2014]/g, '-')
-            .replace(/\u2026/g, '...')
-            .replace(/[^\x00-\x7F]/g, '')
-            .trim();
+const central943Processor = {
+    // Define static column mappings
+    staticColumnMappings: {
+        'A': 'A',
+        'B': 'CENTRAL',
+        'F': 'LYN'
+    },
+    
+    // Define special static values that depend on conditions or other values
+    dynamicStaticValues: {
+        'H': (rowData) => 'A',
+        'BJ': (rowData) => 'EA',
+        'CU': (rowIndex) => rowIndex + 1
+    },
+    
+    // Define dynamic column mappings from input headers to output columns
+    dynamicColumnMappings: {
+        'D': 'PO#',
+        'J': 'Container#',
+        'BH': 'style#',
+        'BK': 'QTY in PCS'
     },
 
     process(data) {
-        let sheet1Data;
+        let sheet1Data = utils.excel.getSheetData(data);
 
-        if (data[0] && Array.isArray(data[0])) {
-            // CSV file case
-            sheet1Data = data;
-        } else {
-            // Excel file case - find Sheet1
-            const workbook = data;
-            const sheet1Name = workbook.SheetNames[0] || 'Sheet1'; // Get first sheet
-            sheet1Data = XLSX.utils.sheet_to_json(workbook.Sheets[sheet1Name], { header: 1 });
-
-            if (!sheet1Data) {
-                throw new Error("Sheet1 not found in the workbook");
-            }
+        // Validate data exists
+        if (!sheet1Data || sheet1Data.length === 0) {
+            throw new Error("No data found in the sheet");
+        }
+        
+        // Get required headers from our dynamic mappings
+        const requiredHeaders = Object.values(this.dynamicColumnMappings);
+        
+        // Find the header row and column indices using utils
+        const { headerRowIndex, columnIndices } = utils.excel.findHeaderRow(sheet1Data, requiredHeaders);
+        
+        // Verify headers were found
+        if (headerRowIndex === -1) {
+            throw new Error(`Required headers not found: ${requiredHeaders.join(', ')}`);
+        }
+        
+        // Process all rows except header row and empty rows
+        const dataRows = sheet1Data.slice(headerRowIndex + 1).filter(row => 
+            row && row.some(cell => cell !== null && cell !== undefined && cell !== ''));
+        
+        // If no data rows, return empty result
+        if (dataRows.length === 0) {
+            return [];
         }
 
-        // Ensure we have enough rows
-        if (!sheet1Data || sheet1Data.length < 8) {
-            throw new Error("File doesn't have enough rows (minimum 8 required)");
-        }
-
-        // Skip header row (start from index 7)
-        const dataRows = sheet1Data.slice(7, 17)
-            .filter(row => row.some(cell => cell !== null && cell !== '')); // Filter empty rows
-
-        const numRows = dataRows.length;
-        const labels = this.getExcelColumnLabels(200);
-        const result = Array(numRows).fill().map(() => Array(labels.length).fill(''));
-
-        for (let row = 0; row < numRows; row++) {
-            // Static values
-            result[row][labels.indexOf('A')] = 'A';
-            result[row][labels.indexOf('B')] = 'CENTRAL';
-            result[row][labels.indexOf('F')] = 'LYN';
-            result[row][labels.indexOf('H')] = 'A';
-            result[row][labels.indexOf('BJ')] = 'EA';
-
-            // Current data row
-            const currentRow = dataRows[row] || [];
-
-            // Column D mapping (G)
-            result[row][labels.indexOf('D')] = this.sanitizeString(currentRow[6]);
-
-            // Column J mapping (D)
-            result[row][labels.indexOf('J')] = this.sanitizeString(currentRow[3]);
-
-            // Column BH mapping (B)
-            result[row][labels.indexOf('BH')] = this.sanitizeString(currentRow[1]);
-
-            // Column BK mapping (H)
-            result[row][labels.indexOf('BK')] = this.sanitizeString(currentRow[7]);
-
-            // Sequential numbering for outgoing column CU
-            result[row][labels.indexOf('CU')] = row + 1; // Assign sequential number starting from 1
-        }
-
-        // Remove completely empty rows
-        return result.filter(row => row.some(cell => cell !== ''));
+        const labels = utils.excel.getExcelColumnLabels(200);
+        const result = [];
+        
+        // Group data rows by PO# to maintain relationship - now using the utility function
+        const poGroups = utils.excel.groupDataByColumn(dataRows, columnIndices['PO#'], {
+            ignoreEmptyValues: true
+        });
+        
+        // Process each group and add to result
+        Object.entries(poGroups).forEach(([poNumber, groupRows]) => {
+            if (poNumber === 'undefined' || poNumber === '') return;
+            
+            groupRows.forEach((rowData, index) => {
+                // Create a new row for the result
+                const resultRow = Array(labels.length).fill('');
+                
+                // Apply static values
+                Object.entries(this.staticColumnMappings).forEach(([column, value]) => {
+                    resultRow[labels.indexOf(column)] = value;
+                });
+                
+                // Apply dynamic static values
+                Object.entries(this.dynamicStaticValues).forEach(([column, valueFn]) => {
+                    resultRow[labels.indexOf(column)] = valueFn(result.length, rowData);
+                });
+                
+                // Map dynamic values from source data
+                Object.entries(this.dynamicColumnMappings).forEach(([outColumn, inHeader]) => {
+                    const columnIndex = columnIndices[inHeader];
+                    if (columnIndex !== undefined && rowData[columnIndex] !== undefined && rowData[columnIndex] !== null) {
+                        resultRow[labels.indexOf(outColumn)] = utils.text.cleanupSpecialCharacters(rowData[columnIndex]);
+                    }
+                });
+                
+                result.push(resultRow);
+            });
+        });
+        
+        return result;
     }
 };
 

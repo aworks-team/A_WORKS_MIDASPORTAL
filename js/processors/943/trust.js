@@ -28,59 +28,60 @@ const trust943Processor = {
             throw new Error("No data found in the sheet");
         }
 
-        // Get header row and find column indices using normalized comparison
-        const headers = sheet1Data[0].map(header => utils.text.cleanHeader(header));
+        // Get required headers from our dynamic mappings
+        const requiredHeaders = Object.values(this.dynamicColumnMappings);
         
-        // Build column indices object dynamically from mappings
-        const columnIndices = {};
-        Object.entries(this.dynamicColumnMappings).forEach(([_, headerName]) => {
-            columnIndices[headerName] = utils.text.findHeaderIndex(headers, headerName);
-        });
-
-        // Validate required headers exist
-        const missingHeaders = Object.entries(columnIndices)
-            .filter(([_, index]) => index === -1)
-            .map(([header]) => header);
-
-        if (missingHeaders.length > 0) {
-            throw new Error(`Required headers not found: ${missingHeaders.join(', ')}`);
+        // Find the header row and column indices using utils
+        const { headerRowIndex, columnIndices } = utils.excel.findHeaderRow(sheet1Data, requiredHeaders);
+        
+        // Verify headers were found
+        if (headerRowIndex === -1) {
+            throw new Error(`Required headers not found: ${requiredHeaders.join(', ')}`);
         }
-
-        // Process all rows except header
-        const dataWithoutHeader = sheet1Data.slice(1);
+        
+        // Process all rows except header row and empty rows
+        const dataRows = sheet1Data.slice(headerRowIndex + 1).filter(row => 
+            row && row.some(cell => cell !== null && cell !== undefined && cell !== ''));
         
         // If no data rows, return empty result
-        if (dataWithoutHeader.length === 0) {
+        if (dataRows.length === 0) {
             return [];
         }
 
         const labels = utils.excel.getExcelColumnLabels(200);
+        const result = [];
         
-        // Create result array with exact same number of rows as input data
-        const result = Array(dataWithoutHeader.length).fill().map(() => Array(labels.length).fill(''));
-
-        // Process each row that has actual data
-        dataWithoutHeader.forEach((rowData, rowIndex) => {
-            // Skip processing if row is empty or contains only empty cells
-            if (!rowData || rowData.every(cell => !cell)) {
-                return;
-            }
+        // Group data rows by PO to maintain relationship
+        const poGroups = utils.excel.groupDataByColumn(dataRows, columnIndices['IN_PO'], {
+            ignoreEmptyValues: true
+        });
+        
+        // Process each group and add to result
+        Object.entries(poGroups).forEach(([poNumber, groupRows]) => {
+            if (poNumber === 'undefined' || poNumber === '') return;
             
-            // Apply static values for this row
-            Object.entries(this.staticColumnMappings).forEach(([column, value]) => {
-                result[rowIndex][labels.indexOf(column)] = value;
-            });
-
-            // Process dynamic columns from input data
-            Object.entries(this.dynamicColumnMappings).forEach(([outColumn, inHeader]) => {
-                if (rowData[columnIndices[inHeader]] !== undefined && rowData[columnIndices[inHeader]] !== null) {
-                    result[rowIndex][labels.indexOf(outColumn)] = utils.text.cleanupSpecialCharacters(rowData[columnIndices[inHeader]]);
-                }
+            groupRows.forEach((rowData, index) => {
+                // Create a new row for the result
+                const resultRow = Array(labels.length).fill('');
+                
+                // Apply static values
+                Object.entries(this.staticColumnMappings).forEach(([column, value]) => {
+                    resultRow[labels.indexOf(column)] = value;
+                });
+                
+                // Map dynamic values from source data
+                Object.entries(this.dynamicColumnMappings).forEach(([outColumn, inHeader]) => {
+                    const columnIndex = columnIndices[inHeader];
+                    if (columnIndex !== undefined && rowData[columnIndex] !== undefined && rowData[columnIndex] !== null) {
+                        resultRow[labels.indexOf(outColumn)] = utils.text.cleanupSpecialCharacters(rowData[columnIndex]);
+                    }
+                });
+                
+                result.push(resultRow);
             });
         });
-
-        // Filter out any empty rows from the result
-        return result.filter(row => row.some(cell => cell !== ''));
+        
+        return result;
     }
 };
 
