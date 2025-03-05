@@ -1,6 +1,17 @@
 export const can943Instructions = {
     steps: [
         {
+            title: "File Structure",
+            items: [
+                { text: "Process the second sheet of the Excel file" },
+                { text: "Row 5 contains the header row" },
+                { text: "Data processing starts from row 6" },
+                { text: "Output starts from row 1 (no header row in output)" },
+                { text: "Processing stops when a row contains 'Total for Container' or 'Grand Total'" },
+                { text: "Processing also stops when column A value changes from previous row" }
+            ]
+        },
+        {
             title: "Static Values",
             items: [
                 { text: "Column A = 'A'" },
@@ -11,20 +22,13 @@ export const can943Instructions = {
             ]
         },
         {
-            title: "Mapping Rules",
+            title: "Data Mapping Rules",
             items: [
-                { text: "Column D uses value from Sheet2 (D3:E3)" },
-                { text: "Column J combines values from Sheet2 (A6:C13)" },
-                { text: "Column BH combines values from Sheet2 (F6:H13)" },
-                { text: "Column BK uses values from Sheet2 (U6:U13)" }
-            ]
-        },
-        {
-            title: "Final Steps",
-            items: [
-                { text: "Process data from Sheet2 Rows 6-13" },
-                { text: "Ensure outgoing CSV has exactly 8 rows" },
-                { text: "Remove any completely empty rows from output" }
+                { text: "Column D: Find a cell with 'Reference Number' and use the value from the cell below it" },
+                { text: "Column J: Map from 'Container #' header" },
+                { text: "Column BH: Map from 'Item #' header" },
+                { text: "Column BK: Map from 'Qty Shipped' header" },
+                { text: "Column CU: Sequential numbering (1, 2, 3, etc.)" }
             ]
         }
     ],
