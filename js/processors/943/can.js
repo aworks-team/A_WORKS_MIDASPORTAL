@@ -1,30 +1,6 @@
-const can943Processor = {
-  getExcelColumnLabels(n) {
-    const labels = [];
-    for (let i = 0; i < n; i++) {
-      let dividend = i;
-      let columnLabel = '';
-      while (dividend >= 0) {
-        const modulo = dividend % 26;
-        columnLabel = String.fromCharCode(65 + modulo) + columnLabel;
-        dividend = Math.floor(dividend / 26) - 1;
-      }
-      labels.push(columnLabel);
-    }
-    return labels;
-  },
+import utils from "../../../utils/utils.js";
 
-  sanitizeString(str) {
-    if (!str) return '';
-    str = str.toString();
-    return str
-      .replace(/[\u2018\u2019]/g, "'")
-      .replace(/[\u201C\u201D]/g, '"')
-      .replace(/[\u2013\u2014]/g, '-')
-      .replace(/\u2026/g, '...')
-      .replace(/[^\x00-\x7F]/g, '')
-      .trim();
-  },
+const can943Processor = {
 
   process(data) {
     let sheet2Data;
@@ -49,12 +25,12 @@ const can943Processor = {
       throw new Error("Sheet2 doesn't have enough rows (minimum 6 required)");
     }
 
-    const labels = this.getExcelColumnLabels(100);
+    const labels = utils.excel.getExcelColumnLabels(100);
     let finalResults = [];
 
     // Get the D3:E3 value from Sheet2
     const d3Value = sheet2Data[2]
-      ? this.sanitizeString(sheet2Data[2][3] + " " + sheet2Data[2][4])
+      ? utils.text.cleanupSpecialCharacters(sheet2Data[2][3] + " " + sheet2Data[2][4])
       : '';
 
     // Get rows 6-13 (indices 5-12) from Sheet2
@@ -76,9 +52,9 @@ const can943Processor = {
 
       // Column J mapping (from columns A, B, C)
       const jValue = [
-        this.sanitizeString(currentRow[0]),
-        this.sanitizeString(currentRow[1]),
-        this.sanitizeString(currentRow[2])
+        utils.text.cleanupSpecialCharacters(currentRow[0]),
+        utils.text.cleanupSpecialCharacters(currentRow[1]),
+        utils.text.cleanupSpecialCharacters(currentRow[2])
       ]
         .filter(Boolean)
         .join(' ');
@@ -86,16 +62,16 @@ const can943Processor = {
 
       // Column BH mapping (from columns F, G, H)
       const bhValue = [
-        this.sanitizeString(currentRow[5]),
-        this.sanitizeString(currentRow[6]),
-        this.sanitizeString(currentRow[7])
+        utils.text.cleanupSpecialCharacters(currentRow[5]),
+        utils.text.cleanupSpecialCharacters(currentRow[6]),
+        utils.text.cleanupSpecialCharacters(currentRow[7])
       ]
         .filter(Boolean)
         .join(' ');
       result[row][labels.indexOf('BH')] = bhValue;
 
       // Column BK mapping (from column U)
-      const bkValue = this.sanitizeString(currentRow[20]);
+      const bkValue = utils.text.cleanupSpecialCharacters(currentRow[20]);
       result[row][labels.indexOf('BK')] = bkValue;
     }
 
