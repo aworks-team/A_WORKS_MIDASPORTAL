@@ -68,11 +68,29 @@ const central832Processor = {
         const columnIndices = {
             style: utils.text.findHeaderIndex(headers, 'Style'),
             qtyPer: utils.text.findHeaderIndex(headers, 'QTY PER'),
-            // For CARTON DIM, we know it spans columns M, N, O in the input
-            cartonLength: 12,  // Column M (0-based index)
-            cartonWidth: 13,   // Column N
-            cartonHeight: 14   // Column O
         };
+
+        // Find CARTON DIM merged cell
+        const cartonDimIndex = utils.text.findHeaderIndex(headers, 'CARTON DIM');
+
+        // If we found CARTON DIM, set the L W H columns as the next three columns
+        if (cartonDimIndex !== -1) {
+            columnIndices.cartonLength = cartonDimIndex;     // L - First column of CARTON DIM
+            columnIndices.cartonWidth = cartonDimIndex + 1;  // W - Second column of CARTON DIM
+            columnIndices.cartonHeight = cartonDimIndex + 2; // H - Third column of CARTON DIM
+        } else {
+            // Fallback: try to find individual L, W, H headers
+            columnIndices.cartonLength = utils.text.findHeaderIndex(headers, 'L');
+            columnIndices.cartonWidth = utils.text.findHeaderIndex(headers, 'W');
+            columnIndices.cartonHeight = utils.text.findHeaderIndex(headers, 'H');
+
+            // If still not found, log warning but continue processing
+            if (columnIndices.cartonLength === -1 ||
+                columnIndices.cartonWidth === -1 ||
+                columnIndices.cartonHeight === -1) {
+                console.warn('Could not find carton dimension headers. Some data may be missing.');
+            }
+        }
 
         // Validate required headers exist (except for carton dimensions which we handle separately)
         const missingHeaders = ['style', 'qtyPer']

@@ -58,6 +58,17 @@ export const central832Instructions = {
             ]
         },
         {
+            title: "Special Handling for Carton Dimensions",
+            items: [
+                { text: "The 'CARTON DIM.' header is a merged cell spanning three columns" },
+                { text: "The three columns under 'CARTON DIM.' represent Length, Width, and Height in that order" },
+                { text: "Column Q: Maps from the first column under 'CARTON DIM.' (Length)" },
+                { text: "Column R: Maps from the second column under 'CARTON DIM.' (Width)" },
+                { text: "Column S: Maps from the third column under 'CARTON DIM.' (Height)" },
+                { text: "If 'CARTON DIM.' is not found, the processor will look for individual 'L', 'W', and 'H' headers" }
+            ]
+        },
+        {
             title: "Output Format",
             items: [
                 { text: "No header row in the output file" },
