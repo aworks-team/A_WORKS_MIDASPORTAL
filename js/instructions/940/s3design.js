@@ -1,11 +1,20 @@
 export const s3design940Instructions = {
     steps: [
         {
+            title: "File Structure",
+            items: [
+                { text: "Headers are in row 1 of the incoming file" },
+                { text: "Data processing starts from row 2" },
+                { text: "Only non-empty rows are processed" },
+                { text: "Output starts from row 1 (no header row in output)" }
+            ]
+        },
+        {
             title: "Static Values",
             items: [
                 { text: "Column A = 'A'" },
                 { text: "Column B = 'S3DESIGN'" },
-                { text: "Column D = Today's date (MMDDYYYY)" },
+                { text: "Column D = Current date (MMDDYYYY)" },
                 { text: "Column G = 'LYN'" },
                 { text: "Column K = 'A'" },
                 { text: "Column M = 'L'" },
@@ -15,28 +24,44 @@ export const s3design940Instructions = {
             ]
         },
         {
-            title: "Mapping Rules",
+            title: "Dynamic Mappings",
             items: [
-                { text: "Column Q: Extract text after '/' from CUST_NAME column (e.g., from 'MODECRAFT FASHIONS / BURLINGTON' get 'BURLINGTON')" },
-                { text: "Copy Column B to Column E" },
-                { text: "Copy Column A to Column O" },
-                { text: "Copy Column H to Column S" },
-                { text: "Copy Column I to Column U" },
-                { text: "Copy Column L to Column S" },
-                { text: "Copy Column N to Column U" },
-                { text: "Copy Column O to Column V" },
-                { text: "Copy Column P to Column W" },
-                { text: "Copy Column G to Column AU (format as MMDDYYYY)" },
-                { text: "Copy Column H to Column AW (format as MMDDYYYY)" },
-                { text: "Copy Column X to Column CS" },
-                { text: "Copy Column Y to Column CV" }
+                { text: "Column E: Map from 'ORDER_NO' header" },
+                { text: "Column O: Map from 'PICKTKT' header" },
+                { text: "Column Q: Map from 'CUST_NAME' header (with special retailer handling)" },
+                { text: "Column S: Map from 'ST_ADDR_1' header" },
+                { text: "Column U: Map from 'ST_CITY' header" },
+                { text: "Column V: Map from 'ST_STATE' header" },
+                { text: "Column W: Map from 'ST_POSTAL' header" },
+                { text: "Column AU: Map from 'START_DATE' header (format as MMDDYYYY)" },
+                { text: "Column AW: Map from 'CANCEL_DATE' header (format as MMDDYYYY)" },
+                { text: "Column CS: Map from 'USER_COLUMN1' header" },
+                { text: "Column CV: Map from 'PICK_QTY' header" },
+                { text: "Column EH: Sequential numbering (1, 2, 3, etc.)" }
             ]
         },
         {
-            title: "Final Steps",
+            title: "Special Retailer Handling",
             items: [
-                { text: "Add sequential numbers in Column EH (1, 2, 3, etc.)" },
-                { text: "Skip header row from source file" }
+                { text: "Column Q: Map from 'CUST_NAME' header with special handling:" },
+                { text: "- If name contains 'BURLINGTON', use 'BURLINGTON'" },
+                { text: "- If name contains 'TJMAXX' or 'TJ MAXX', use 'TJMAXX'" },
+                { text: "- If name contains 'DDS' or 'DD', use 'DDs'" },
+                { text: "- If name contains 'BEALLS', use 'BEALLS'" },
+                { text: "- If name contains 'ROSS', use 'ROSS'" },
+                { text: "- If name contains 'FASHION NOVA' or 'FASHIONNOVA', use 'FASHION NOVA'" },
+                { text: "- If no retailer match found, use text after '/' if present" },
+                { text: "- Otherwise, use the original value" },
+                { text: "- Note: All matching is case-insensitive and ignores extra whitespace" }
+            ]
+        },
+        {
+            title: "Data Processing",
+            items: [
+                { text: "All text values are cleaned to remove special characters" },
+                { text: "Empty rows in the input are skipped" },
+                { text: "No restrictions on minimum or maximum number of rows" },
+                { text: "Dates are formatted as MMDDYYYY" }
             ]
         }
     ]

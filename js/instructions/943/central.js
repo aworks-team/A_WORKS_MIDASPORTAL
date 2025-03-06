@@ -1,6 +1,15 @@
 export const central943Instructions = {
     steps: [
         {
+            title: "File Structure",
+            items: [
+                { text: "Headers are in row 5 of the incoming file" },
+                { text: "Data processing starts from row 8" },
+                { text: "Only non-empty rows are processed" },
+                { text: "Output starts from row 1 (no header row in output)" }
+            ]
+        },
+        {
             title: "Static Values",
             items: [
                 { text: "Column A = 'A'" },
@@ -11,20 +20,21 @@ export const central943Instructions = {
             ]
         },
         {
-            title: "Mapping Rules",
+            title: "Dynamic Mappings",
             items: [
-                { text: "Copy Column G from incoming (Row 8+) to Column D" },
-                { text: "Copy Column D from incoming (Row 8+) to Column J" },
-                { text: "Copy Column B from incoming (Row 8+) to Column BH" },
-                { text: "Copy Column H from incoming (Row 8+) to Column BK" },
-                { text: "Column CU Sequential Numbering" }
+                { text: "Column D: Map from 'PO#' header" },
+                { text: "Column J: Map from 'Container#' header" },
+                { text: "Column BH: Map from 'style#' header" },
+                { text: "Column BK: Map from 'QTY in PCS' header" },
+                { text: "Column CU: Sequential numbering (1, 2, 3, etc.)" }
             ]
         },
         {
-            title: "Final Steps",
+            title: "Data Processing",
             items: [
-                { text: "Start processing from Row 8 of incoming file" },
-                { text: "Remove any completely empty rows from output" }
+                { text: "All text values are cleaned to remove special characters" },
+                { text: "Empty rows in the input are skipped" },
+                { text: "No restrictions on minimum or maximum number of rows" }
             ]
         }
     ],
