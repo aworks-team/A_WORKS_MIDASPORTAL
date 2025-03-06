@@ -47,31 +47,38 @@ const central943Processor = {
         // Get column labels for output
         const labels = utils.excel.getExcelColumnLabels(200);
 
-        // Process non-empty rows
-        const result = dataRows
-            .filter(row => row && row.some(cell => cell !== null && cell !== undefined && cell !== ''))
-            .map((row, index) => {
-                const outputRow = Array(labels.length).fill('');
+        // Process rows until we hit an empty row
+        const result = [];
+        for (let i = 0; i < dataRows.length; i++) {
+            const row = dataRows[i];
 
-                // Apply static values
-                Object.entries(this.staticColumnMappings).forEach(([column, value]) => {
-                    outputRow[labels.indexOf(column)] = value;
-                });
+            // Check if row is empty
+            if (!row || !row.some(cell => cell !== null && cell !== undefined && cell !== '')) {
+                console.log(`Empty row encountered at index ${i}, stopping processing`);
+                break; // Stop processing when we hit an empty row
+            }
 
-                // Process dynamic columns from input data
-                Object.entries(this.dynamicColumnMappings).forEach(([outColumn, inHeader]) => {
-                    const headerIndex = columnIndices[inHeader];
-                    if (headerIndex !== -1 && row[headerIndex] !== undefined && row[headerIndex] !== null) {
-                        let value = row[headerIndex].toString();
-                        outputRow[labels.indexOf(outColumn)] = utils.text.cleanupSpecialCharacters(value);
-                    }
-                });
+            const outputRow = Array(labels.length).fill('');
 
-                // Sequential number (1-based index)
-                outputRow[labels.indexOf('CU')] = index + 1;
-
-                return outputRow;
+            // Apply static values
+            Object.entries(this.staticColumnMappings).forEach(([column, value]) => {
+                outputRow[labels.indexOf(column)] = value;
             });
+
+            // Process dynamic columns from input data
+            Object.entries(this.dynamicColumnMappings).forEach(([outColumn, inHeader]) => {
+                const headerIndex = columnIndices[inHeader];
+                if (headerIndex !== -1 && row[headerIndex] !== undefined && row[headerIndex] !== null) {
+                    let value = row[headerIndex].toString();
+                    outputRow[labels.indexOf(outColumn)] = utils.text.cleanupSpecialCharacters(value);
+                }
+            });
+
+            // Sequential number (1-based index)
+            outputRow[labels.indexOf('CU')] = result.length + 1;
+
+            result.push(outputRow);
+        }
 
         return result;
     }

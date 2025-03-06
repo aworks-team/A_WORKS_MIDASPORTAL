@@ -5,7 +5,7 @@ export const central943Instructions = {
             items: [
                 { text: "Headers are in row 5 of the incoming file" },
                 { text: "Data processing starts from row 8" },
-                { text: "Only non-empty rows are processed" },
+                { text: "Processing stops at the first empty row encountered" },
                 { text: "Output starts from row 1 (no header row in output)" }
             ]
         },
@@ -33,8 +33,8 @@ export const central943Instructions = {
             title: "Data Processing",
             items: [
                 { text: "All text values are cleaned to remove special characters" },
-                { text: "Empty rows in the input are skipped" },
-                { text: "No restrictions on minimum or maximum number of rows" }
+                { text: "Processing stops immediately when an empty row is encountered" },
+                { text: "Sequential numbering is continuous for all processed rows" }
             ]
         }
     ],
