@@ -15,6 +15,7 @@ import jns832Processor from "./processors/832/jns.js";
 import can943Processor from "./processors/943/can.js";
 import can832Processor from "./processors/832/can.js";
 import prime940Processor from "./processors/940/prime.js";
+import corwik940Processor from "./processors/940/corwik.js";
 // Add debug logging
 console.log("Loading processors...");
 console.log("Imported processors:", {
@@ -59,6 +60,9 @@ const processors = {
   Prime: {
     940: prime940Processor.process.bind(prime940Processor)
   },
+  Corwik: {
+    940: corwik940Processor.process.bind(corwik940Processor)
+  }
 };
 
 
