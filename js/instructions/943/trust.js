@@ -1,29 +1,41 @@
 export const trust943Instructions = {
     steps: [
         {
+            title: "File Structure",
+            items: [
+                { text: "Headers are in row 1 of the incoming file" },
+                { text: "Data processing starts from row 2" },
+                { text: "Only non-empty rows are processed" },
+                { text: "Output starts from row 1 (no header row in output)" }
+            ]
+        },
+        {
             title: "Static Values",
             items: [
                 { text: "Column A = 'A'" },
-                { text: "Column B = 'TRUST'" }
+                { text: "Column B = 'TRUST'" },
+                { text: "Column F = 'LYN'" },
+                { text: "Column H = 'A'" }
             ]
         },
         {
-            title: "Mapping Rules",
+            title: "Dynamic Mappings",
             items: [
-                { text: "Copy Column D from source to Column D" },
-                { text: "Copy Column F from source to Column F" },
-                { text: "Copy Column H from source to Column H" },
-                { text: "Copy Column J from source to Column J" },
-                { text: "Copy Column BH from source to Column BH" },
-                { text: "Copy Column BI from source to Column BI" },
-                { text: "Copy Column BJ from source to Column BJ" },
-                { text: "Copy Column BK from source to Column BK" }
+                { text: "Column D: Map from 'IN_PO' header" },
+                { text: "Column J: Map from 'IN_REFERENCE' header" },
+                { text: "Column BH: Map from 'IN_ITEMENTERED' header" },
+                { text: "Column BI: Map from 'IN_LOTNUMBER' header" },
+                { text: "Column BJ: Map from 'IN_UOMENTERED' header" },
+                { text: "Column BK: Map from 'IN_QTYENTERED' header" },
+                { text: "Column CU: Sequential numbering (1, 2, 3, etc.)" }
             ]
         },
         {
-            title: "Final Steps",
+            title: "Data Processing",
             items: [
-                { text: "Skip header row from source file" }
+                { text: "All text values are cleaned to remove special characters" },
+                { text: "Empty rows in the input are skipped" },
+                { text: "No restrictions on minimum or maximum number of rows" }
             ]
         }
     ],

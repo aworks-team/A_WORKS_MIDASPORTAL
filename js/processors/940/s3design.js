@@ -1,6 +1,30 @@
 import utils from "../../../utils/utils.js";
 
 const s3design940Processor = {
+    // Define static column mappings
+    staticColumnMappings: {
+        'A': 'A',
+        'B': 'S3DESIGN',
+        'G': 'LYN',
+        'K': 'A',
+        'M': 'L',
+        'N': 'ROUT',
+        'P': 'COL',
+        'CU': 'EA'
+    },
+
+    // Define special retailers for column Q
+    specialRetailers: [
+        { keyword: 'BURLINGTON', value: 'BURLINGTON' },
+        { keyword: 'TJMAXX', value: 'TJMAXX' },
+        { keyword: 'TJ MAXX', value: 'TJMAXX' }, // Alternative with space
+        { keyword: 'DDS', value: 'DDs' },
+        { keyword: 'DD', value: 'DDs' }, // Alternative match for DDs
+        { keyword: 'BEALLS', value: 'BEALLS' },
+        { keyword: 'ROSS', value: 'ROSS' },
+        { keyword: 'FASHION NOVA', value: 'FASHION NOVA' },
+        { keyword: 'FASHIONNOVA', value: 'FASHION NOVA' } // Alternative match for Fashion Nova
+    ],
 
     process(data) {
         let sheet1Data = utils.excel.getSheetData(data);
@@ -41,17 +65,19 @@ const s3design940Processor = {
 
         // Process each row
         for (let row = 0; row < numRows; row++) {
-            // Static columns
-            result[row][labels.indexOf('A')] = 'A';
-            result[row][labels.indexOf('B')] = 'S3DESIGN';
-            result[row][labels.indexOf('G')] = 'LYN';
-            result[row][labels.indexOf('D')] = currentDate;
-            result[row][labels.indexOf('K')] = 'A';
-            result[row][labels.indexOf('M')] = 'L';
-            result[row][labels.indexOf('N')] = 'ROUT';
-            result[row][labels.indexOf('P')] = 'COL';
+            // Skip empty rows
+            if (!dataWithoutHeader[row] || !dataWithoutHeader[row].some(cell => cell !== null && cell !== undefined && cell !== '')) {
+                continue;
+            }
 
-            // Dynamic columns mapping
+            // Static columns
+            Object.entries(this.staticColumnMappings).forEach(([column, value]) => {
+                result[row][labels.indexOf(column)] = value;
+            });
+
+            // Add current date to column D
+            result[row][labels.indexOf('D')] = currentDate;
+
             const rowData = dataWithoutHeader[row];
 
             // Column E (from ORDER_NO)
@@ -62,6 +88,38 @@ const s3design940Processor = {
             // Column O (from PICKTKT)
             if (rowData[columnIndices.pickTkt]) {
                 result[row][labels.indexOf('O')] = utils.text.cleanupSpecialCharacters(rowData[columnIndices.pickTkt]);
+            }
+
+            // Column Q (from CUST_NAME with retailer detection)
+            if (rowData[columnIndices.custName]) {
+                const custNameValue = utils.text.cleanupSpecialCharacters(rowData[columnIndices.custName]);
+                const upperValue = custNameValue.toUpperCase().trim();
+                let matched = false;
+
+                console.log(`Processing retailer name for column Q: "${custNameValue}" (uppercase: "${upperValue}")`);
+
+                // Check if the value contains any of our special retailers
+                for (const retailer of this.specialRetailers) {
+                    const keyword = retailer.keyword;
+                    if (upperValue.includes(keyword)) {
+                        result[row][labels.indexOf('Q')] = retailer.value;
+                        matched = true;
+                        console.log(`✓ Matched retailer: "${keyword}" in "${upperValue}" -> "${retailer.value}"`);
+                        break;
+                    }
+                }
+
+                // If no match was found, try to get value after '/'
+                if (!matched) {
+                    const parts = upperValue.split('/');
+                    if (parts.length > 1) {
+                        result[row][labels.indexOf('Q')] = parts[1].trim();
+                        console.log(`Using value after '/': "${parts[1].trim()}"`);
+                    } else {
+                        result[row][labels.indexOf('Q')] = custNameValue;
+                        console.log(`! No retailer match or '/' found, using original value: "${custNameValue}"`);
+                    }
+                }
             }
 
             // Column S (from ST_ADDR_1)
@@ -104,20 +162,12 @@ const s3design940Processor = {
                 result[row][labels.indexOf('CV')] = utils.text.cleanupSpecialCharacters(rowData[columnIndices.pickQty]);
             }
 
-            // Column Q (from CUST_NAME, get value after '/')
-            if (rowData[columnIndices.custName]) {
-                const custNameParts = utils.text.cleanupSpecialCharacters(rowData[columnIndices.custName]).split('/');
-                result[row][labels.indexOf('Q')] = custNameParts.length > 1 ? custNameParts[1].trim() : '';
-            }
-
             // Sequential number in Column EH
             result[row][labels.indexOf('EH')] = row + 1;
-
-            // Fixed value in Column CU
-            result[row][labels.indexOf('CU')] = 'EA';
         }
 
-        return result;
+        // Filter out empty rows from result
+        return result.filter(row => row.some(cell => cell !== ''));
     }
 };
 
