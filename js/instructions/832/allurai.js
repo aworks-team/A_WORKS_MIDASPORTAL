@@ -1,9 +1,12 @@
 export const allurai832Instructions = {
     steps: [
         {
-            title: "Row Selection",
+            title: "File Structure",
             items: [
-                { text: "Process rows 2-20 from incoming file" }
+                { text: "Headers are in row 1 of the incoming file" },
+                { text: "Data processing starts from row 2" },
+                { text: "Only non-empty rows are processed" },
+                { text: "Output starts from row 1 (no header row in output)" }
             ]
         },
         {
@@ -39,9 +42,18 @@ export const allurai832Instructions = {
         {
             title: "Dynamic Mappings",
             items: [
-                { text: "Copy Column C from incoming to Column D" },
-                { text: "Copy Column F from incoming to Column O" },
-                { text: "Split Column G dimensions into Columns Q, R, S" }
+                { text: "Column D: Map from 'STYLE' header" },
+                { text: "Column O: Map from 'WEIGHT' header" },
+                { text: "Columns Q, R, S: Split 'DIMENSION' header value using 'x' separator" }
+            ]
+        },
+        {
+            title: "Data Processing",
+            items: [
+                { text: "All text values are cleaned to remove special characters" },
+                { text: "Empty rows in the input are skipped" },
+                { text: "No restrictions on minimum or maximum number of rows" },
+                { text: "Dimensions are processed with 2 decimal precision" }
             ]
         }
     ],
