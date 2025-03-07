@@ -15,6 +15,7 @@ import { central832Instructions } from "./832/central.js";
 import { jns832Instructions } from "./832/jns.js";
 import { can943Instructions } from "./943/can.js";
 import { prime940Instructions } from "./940/prime.js";
+import { corwik940Instructions } from "./940/corwik.js";
 // Export the instructions object
 
 export const instructions = {
@@ -33,6 +34,7 @@ export const instructions = {
         Sensual: sensual940Instructions,
         Can: can940Instructions,
         Prime: prime940Instructions,
+        Corwik: corwik940Instructions,
     },
     "832": {
         Trust: trust832Instructions,
