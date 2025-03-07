@@ -1,193 +1,138 @@
 import utils from "../../../utils/utils.js";
 
 const corwikProcessor = {
-
-  // Extract text from PDF—return an array with each page's text.
+  /**
+   * Extract text from PDF—return an array with each page's text.
+   * @param {ArrayBuffer} arrayBuffer - The PDF file as an array buffer
+   * @returns {Promise<string[]>} Array of text content from each page
+   */
   async extractTextFromPdf(arrayBuffer) {
     try {
       const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
       const pdf = await loadingTask.promise;
-      let pageTexts = [];
+      const pageTexts = [];
+
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
         const content = await page.getTextContent();
-        let pageText = content.items.map(item => item.str).join(' ') + '\n';
+        const pageText = content.items.map(item => item.str).join(' ') + '\n';
         pageTexts.push(pageText);
       }
+
       return pageTexts;
     } catch (error) {
       console.error("PDF extraction error:", error);
-      throw new Error("Failed to extract text from PDF: " + error.message);
+      throw new Error(`Failed to extract text from PDF: ${error.message}`);
     }
   },
 
-  // Extract fields from a page's text using regexes.
+  /**
+   * Extract fields from a page's text using regex patterns.
+   * @param {string} text - The text content to extract data from
+   * @returns {Object} Structured data extracted from the text
+   */
   extractDataByHeaders(text) {
-    let data = {
-      poNumbers: [],
-      pickingSlip: [],
-      shipTo: {
-        raw: [],
-        name: [],
-        address: [],
-        city: [],
-        state: [],
-        zip: []
-      },
-      shipDates: {
-        ship: [],
-        cancel: []
-      },
-      styleColor: [],
-      total: []
-    };
+    const data = this.initializeDataObject();
+    const rawText = text.trim();
+    data.shipTo.raw.push(rawText);
 
-    // --- PO Number extraction ---
-    const poRegex = /MISC\s+(\d{8})/i;
-    const poMatch = text.match(poRegex);
-    data.poNumbers.push(poMatch ? poMatch[1] : '');
+    // console.log("Extracted Raw Data:", rawText);
 
-    // --- Picking Slip # extraction ---
-    data.pickingSlip.push('');
+    const patterns = this.getRegexPatterns();
 
-    // --- Ship To block extraction ---
-    const shipToRegex = /(\d{5}[\s\S]+?Style\/Color)/i;
-    const shipToMatch = text.match(shipToRegex);
-    data.shipTo.raw.push(shipToMatch ? shipToMatch[1] : '');
+    data.poNumbers.push(this.extractWithRegex(rawText, patterns.poNumber));
+    data.pickingSlip.push(this.extractWithRegex(rawText, patterns.pickingSlip));
+    data.shipTo.name.push(this.extractWithRegex(rawText, patterns.shipToName));
+    data.shipTo.address.push(this.extractWithRegex(rawText, patterns.shipToAddress));
+    data.shipTo.city.push(this.extractWithRegex(rawText, patterns.shipToCity));
+    data.shipTo.state.push(this.extractWithRegex(rawText, patterns.shipToState));
+    data.shipTo.zip.push(this.extractWithRegex(rawText, patterns.shipToZip));
+    data.shipDates.ship.push(this.formatDate(rawText, patterns.shipDate));
+    data.shipDates.cancel.push(this.formatDate(rawText, patterns.cancelDate));
+    data.styleColor.push(''); 
+    data.total.push(this.extractWithRegex(rawText, patterns.total, true));
 
-    if (data.shipTo.raw[0]) {
-      const rawText = data.shipTo.raw[0];
-
-      // --- Ship To Name ---
-      const nameRegex = /(TJMAXX\s+DC(?:\s*#\s*|\s+)(?:\d+\s*)+(?:\(\w+\))?)/i;
-      const nameMatch = rawText.match(nameRegex);
-      data.shipTo.name.push(nameMatch ? nameMatch[1].trim() : '');
-
-      // --- Ship To Address ---
-      const addrRegex = /(\d{3,5}\s+[A-Z]+(?:\s+[A-Z]+)*\s+(?:HIGHWAY|BLVD\.?))/i;
-      const addrMatch = rawText.match(addrRegex);
-      data.shipTo.address.push(addrMatch ? addrMatch[1].trim() : '');
-
-      // --- Improved City, State, ZIP extraction ---
-      // Look for patterns like "CHATTANOOGA,,  TN Ship To : 37405" or "CHARLOTTE,  NC Ship To : 28273"
-      const locationRegex = /([A-Z]+)(?:,+)\s+([A-Z]{2})\s+Ship\s+To\s*:\s*(\d{5})/i;
-      const locationMatch = rawText.match(locationRegex);
-      
-      if (locationMatch) {
-        const city = locationMatch[1];
-        const state = locationMatch[2];
-        const zip = locationMatch[3];
-        
-        data.shipTo.city.push(city);
-        data.shipTo.state.push(state);
-        data.shipTo.zip.push(zip);
-        
-        console.log(`Location match found: ${city}, ${state} ${zip}`);
-      } else {
-        // Fallback to the previous ZIP code-based logic
-        const zipRegex = /Ship\s+To\s*:\s*(\d{5})/i;
-        const zipMatch = rawText.match(zipRegex);
-        
-        if (zipMatch) {
-          const zip = zipMatch[1];
-          data.shipTo.zip.push(zip);
-          
-          switch (zip) {
-            case "37405":
-              data.shipTo.city.push("CHATTANOOGA");
-              data.shipTo.state.push("TN");
-              console.log(`ZIP match found: ${zip} -> CHATTANOOGA, TN`);
-              break;
-            case "28273":
-              data.shipTo.city.push("CHARLOTTE");
-              data.shipTo.state.push("NC");
-              console.log(`ZIP match found: ${zip} -> CHARLOTTE, NC`);
-              break;
-            default:
-              data.shipTo.city.push('');
-              data.shipTo.state.push('');
-              console.log(`ZIP found but no city/state match: ${zip}`);
-          }
-        } else {
-          data.shipTo.zip.push('');
-          data.shipTo.city.push('');
-          data.shipTo.state.push('');
-          console.log('No ZIP code found in the text');
-        }
-      }
-
-      // --- Ship Dates ---
-      // Look for dates after "Dept" - first date is Ship Date, second is Cancel Date
-      const deptDatesRegex = /Dept\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d{1,2}\/\d{1,2}\/\d{4})/i;
-      const deptDatesMatch = rawText.match(deptDatesRegex);
-      
-      if (deptDatesMatch) {
-        const shipDate = deptDatesMatch[1];
-        const cancelDate = deptDatesMatch[2];
-        
-        const formattedShipDate = utils.date.formattedDate(shipDate);
-        const formattedCancelDate = utils.date.formattedDate(cancelDate);
-        
-        data.shipDates.ship.push(formattedShipDate);
-        data.shipDates.cancel.push(formattedCancelDate);
-        
-        console.log(`Ship Date found: ${shipDate} -> ${formattedShipDate}`);
-        console.log(`Cancel Date found: ${cancelDate} -> ${formattedCancelDate}`);
-      } else {
-        // Fallback to looking for specific Ship Date and Cancel Date headers
-        const shipDateRegex = /Ship\s+Date\s*.*?(\d{1,2}\/\d{1,2}\/\d{4})/i;
-        const cancelDateRegex = /Cancel\s+Date\s*.*?(\d{1,2}\/\d{1,2}\/\d{4})/i;
-        
-        const shipDateMatch = rawText.match(shipDateRegex);
-        const cancelDateMatch = rawText.match(cancelDateRegex);
-        
-        if (shipDateMatch) {
-          const formattedShipDate = utils.date.formattedDate(shipDateMatch[1]);
-          data.shipDates.ship.push(formattedShipDate);
-          console.log(`Ship Date header match: ${shipDateMatch[1]} -> ${formattedShipDate}`);
-        } else {
-          data.shipDates.ship.push('');
-          console.log('No Ship Date found');
-        }
-        
-        if (cancelDateMatch) {
-          const formattedCancelDate = utils.date.formattedDate(cancelDateMatch[1]);
-          data.shipDates.cancel.push(formattedCancelDate);
-          console.log(`Cancel Date header match: ${cancelDateMatch[1]} -> ${formattedCancelDate}`);
-        } else {
-          data.shipDates.cancel.push('');
-          console.log('No Cancel Date found');
-        }
-      }
-    } else {
-      data.shipTo.name.push('');
-      data.shipTo.address.push('');
-      data.shipTo.city.push('');
-      data.shipTo.state.push('');
-      data.shipTo.zip.push('');
-      data.shipDates.ship.push('');
-      data.shipDates.cancel.push('');
-    }
-
-    // --- style/color extraction ---
-    if (/MS15311/i.test(text) && /SKYWAY/i.test(text)) {
-      data.styleColor.push("MS15311-SKYWAY");
-    } else {
-      data.styleColor.push('');
-    }
-
-    // --- Total extraction ---
-    const totalRegex = /Total\s*[:\-]?\s*([\d,\.]+)/i;
-    const totalMatch = text.match(totalRegex);
-    data.total.push(totalMatch ? totalMatch[1].replace(/,/g, '').trim() : '');
-
-    // Log all extracted data in JSON format
-    console.log('Extracted Data:', JSON.stringify(data, null, 2));
-
+    // this.logExtractedData(data);
     return data;
   },
 
-  // Process input data. For PDFs, process each page separately.
+  /**
+   * Initialize the data structure for storing extracted information.
+   * @returns {Object} Empty data structure
+   */
+  initializeDataObject() {
+    return {
+      poNumbers: [],
+      pickingSlip: [],
+      shipTo: { raw: [], name: [], address: [], city: [], state: [], zip: [] },
+      shipDates: { ship: [], cancel: [] },
+      styleColor: [],
+      total: []
+    };
+  },
+
+  /**
+   * Define regex patterns for data extraction.
+   * @returns {Object} Object containing regex patterns
+   */
+  getRegexPatterns() {
+    return {
+      poNumber: /MISC\s+(\d{8})(?=\s+Order\s+#\s+PO\s+#)/i,
+      pickingSlip: /Picking Slip #:\s*(\d+)\s+Page/i,
+      shipToName: /Terms\s*:\s*NET\s*\d+\s*DAYS\s+([A-Z0-9\s\#\.\-\(\)]+?)(?=\s*\(\d{5,6}\s*\)\s*\*\d+\*)/i,
+      shipToAddress: /Sold\s+To:(?:[\s\S]*?)(\d{3,5}\s+[A-Z][A-Z0-9\s\.\-]+(?:HIGHWAY|BLVD\.?|ST\.?|STREET|AVE\.?|AVENUE|RD\.?|ROAD|LN\.?|LANE|DR\.?|DRIVE|WAY|PKWY\.?|PARKWAY))/i,
+      shipToCity: /\d{5}(?:-\d{4})?\s+([A-Z\s]+?)(?=,{1,2}\s+)/i,
+      shipToState: /,{1,2}\s*([A-Z]{2})(?=\s+Ship\s+To)/i,
+      shipToZip: /Ship\s+To\s*:\s*(\d{5})(?=\s+Sold\s+To)/i,
+      shipDate: /Dept\s+(\d{1,2}\/\d{1,2}\/\d{4})(?=\s+\d{1,2}\/\d{1,2}\/\d{4})/i,
+      cancelDate: /Dept\s+\d{1,2}\/\d{1,2}\/\d{4}\s+(\d{1,2}\/\d{1,2}\/\d{4})/i,
+      total: /Total\s*[:\-]?\s*([\d,\.]+)/i
+    };
+  },
+
+  /**
+   * Extract data using a regex pattern.
+   * @param {string} text - The text to extract from
+   * @param {RegExp} pattern - The regex pattern to use
+   * @param {boolean} removeCommas - Whether to remove commas from the result
+   * @returns {string} The extracted text or empty string
+   */
+  extractWithRegex(text, pattern, removeCommas = false) {
+    const match = text.match(pattern);
+    if (!match || !match[1]) return '';
+    
+    let result = match[1].trim();
+    if (removeCommas) {
+      result = result.replace(/,/g, '');
+    }
+    return result;
+  },
+
+  /**
+   * Format a date extracted from text.
+   * @param {string} text - The text to extract from
+   * @param {RegExp} pattern - The regex pattern to use
+   * @returns {string} The formatted date or empty string
+   */
+  formatDate(text, pattern) {
+    const match = text.match(pattern);
+    return match ? utils.date.formattedDate(match[1]) : '';
+  },
+
+  /**
+   * Log the extracted data (excluding raw text for clarity).
+   * @param {Object} data - The extracted data
+   */
+  logExtractedData(data) {
+    const { raw, ...loggedData } = data.shipTo;
+    console.log("Extracted Data:", JSON.stringify({ ...data, shipTo: loggedData }, null, 2));
+  },
+
+  /**
+   * Process input data. For PDFs, process each page separately.
+   * @param {ArrayBuffer|Object|Array} data - The data to process
+   * @returns {Promise<Array>} Processed data as rows
+   */
   async process(data) {
     try {
       let outputRows = [];
@@ -228,8 +173,12 @@ const corwikProcessor = {
     }
   },
 
-  // Format the final output row.
-  // pageNumber is used for Column EH.
+  /**
+   * Format the final output row.
+   * @param {Object} extractedData - The extracted data
+   * @param {number} pageNumber - The page number (used for Column EH)
+   * @returns {Array} Formatted output rows
+   */
   formatOutput(extractedData, pageNumber = 1) {
     const labels = utils.excel.getExcelColumnLabels(200);
     // Each page produces one row.
@@ -265,8 +214,8 @@ const corwikProcessor = {
       result[row][labels.indexOf('CU')] = 'EA';
       result[row][labels.indexOf('CV')] = extractedData.total[0] || '';
       result[row][labels.indexOf('EH')] = pageNumber.toString();
-      // Picking Slip (Column O) intentionally left empty.
-      result[row][labels.indexOf('O')] = '';
+      // Picking Slip (Column O) is filled with the extracted value.
+      result[row][labels.indexOf('O')] = extractedData.pickingSlip[0] || '';
     }
 
     return result;
