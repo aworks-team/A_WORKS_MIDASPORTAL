@@ -1,6 +1,7 @@
 import { userManager } from "../userManager.js";
 import processors from "../processors.js";
 import { instructions } from "../instructions/index.js";
+import { fileTypeConfig } from "../../config/fileTypeConfig.js";
 console.log("Loaded processors:", processors);
 
 function getFormattedDate() {
@@ -133,28 +134,34 @@ function initializeFormSubmission(
     const fileType = fileTypeSelect.value;
     const company = companySelect.value;
 
-    // Enhanced debug logging
-    console.log("Form submission details:", {
-      file: file?.name,
-      fileType,
-      company,
-      processorKeys: Object.keys(processors),
-      availableProcessors: processors[company],
-      processorCompanyKeys: Object.keys(processors)
-        .map((k) => `"${k}"`)
-        .join(", "),
-      exactCompanyMatch: processors[company] ? "Found" : "Not Found",
-      processorTypeIfFound: processors[company]?.[fileType]
-        ? "Found"
-        : "Not Found",
-    });
-
-    if (!file || !fileType || !company) {
-      statusDiv.textContent = "Please fill in all fields";
-      statusDiv.className = "show error";
+    // Check for file selection first
+    if (!file) {
+      showErrorModal("<strong>No file selected!</strong> Please select a file to process.");
       return;
     }
 
+    // Check other required fields
+    if (!fileType || !company) {
+      showErrorModal("Please fill in all fields");
+      return;
+    }
+
+    // Extract file extension
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.split('.').pop();
+
+    console.log("File details:", { fileName, fileType, company, fileExtension });
+
+    // Validate file extension
+    const allowedExtensions = fileTypeConfig[fileType]?.[company] || fileTypeConfig["default"];
+    if (!allowedExtensions.includes(fileExtension)) {
+      // Format extensions with dot prefix
+      const formattedExtensions = allowedExtensions.map(ext => `.${ext}`);
+      showErrorModal(`Unsupported file format for <strong>${company}</strong> - <strong>${fileType}</strong>. Allowed formats: <strong>${formattedExtensions.join(', ')}</strong>`);
+      return;
+    }
+
+    // Proceed with file processing if no errors
     statusDiv.innerHTML =
       '<i class="fas fa-cog processing-animation"></i> Processing...';
     statusDiv.className = "show";
