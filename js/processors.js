@@ -14,11 +14,13 @@ import central832Processor from "./processors/832/central.js";
 import jns832Processor from "./processors/832/jns.js";
 import can943Processor from "./processors/943/can.js";
 import can832Processor from "./processors/832/can.js";
+
+//test
 // Add debug logging
 console.log("Loading processors...");
 console.log("Imported processors:", {
   trust943: !!trust943Processor,
-  trust943Process: !!trust943Processor?.process
+  trust943Process: !!trust943Processor?.process,
 });
 
 const processors = {
@@ -33,31 +35,29 @@ const processors = {
   },
   JNS: {
     943: jns943Processor.process.bind(jns943Processor),
-    832: jns832Processor.process.bind(jns832Processor)
+    832: jns832Processor.process.bind(jns832Processor),
   },
   Trust: {
     943: trust943Processor.process.bind(trust943Processor),
-    832: trust832Processor.process.bind(trust832Processor)
+    832: trust832Processor.process.bind(trust832Processor),
   },
   Coco: {
     943: coco943Processor.process.bind(coco943Processor),
-    832: coco832Processor.process.bind(coco832Processor)
+    832: coco832Processor.process.bind(coco832Processor),
   },
   Sensual: {
-    940: sensual940Processor.process.bind(sensual940Processor)
+    940: sensual940Processor.process.bind(sensual940Processor),
   },
   Central: {
     943: central943Processor.process.bind(central943Processor),
-    832: central832Processor.process.bind(central832Processor)
+    832: central832Processor.process.bind(central832Processor),
   },
   Can: {
     940: can940Processor.process.bind(can940Processor),
     943: can943Processor.process.bind(can943Processor),
-    832: can832Processor.process.bind(can832Processor)
+    832: can832Processor.process.bind(can832Processor),
   },
 };
-
-
 
 console.log("Available processors in processors.js:", Object.keys(processors));
 // Add more detailed debug logging
