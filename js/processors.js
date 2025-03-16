@@ -15,7 +15,7 @@ import jns832Processor from "./processors/832/jns.js";
 import can943Processor from "./processors/943/can.js";
 import can832Processor from "./processors/832/can.js";
 
-//test
+//test3
 // Add debug logging
 console.log("Loading processors...");
 console.log("Imported processors:", {
