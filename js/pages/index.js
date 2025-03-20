@@ -38,7 +38,7 @@ function initializeCompanySelect(fileTypeSelect, companySelect) {
     if (fileType) {
       // Define available companies for each file type
       const companyMap = {
-        940: ["S3 Design", "Allurai", "Sensual", "Can", "Prime", "Corwik"],
+        940: ["S3 Design", "Allurai", "IHL/Sensual", "Can", "Prime", "Corwik"],
         943: ["Allurai", "JNS", "Trust", "Coco", "Central", "Can"],
         832: ["Trust", "Coco", "Allurai", "Central", "JNS", "Can"]
       };

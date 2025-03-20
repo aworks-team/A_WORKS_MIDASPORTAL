@@ -5,7 +5,7 @@ import jns943Processor from "./processors/943/jns.js";
 import trust943Processor from "./processors/943/trust.js";
 import coco943Processor from "./processors/943/coco.js";
 import coco832Processor from "./processors/832/coco.js";
-import sensual940Processor from "./processors/940/sensual.js";
+import IHLsensual940Processor from "./processors/940/IHLsensual.js";
 import central943Processor from "./processors/943/central.js";
 import trust832Processor from "./processors/832/trust.js";
 import allurai832Processor from "./processors/832/allurai.js";
@@ -45,8 +45,8 @@ const processors = {
     943: coco943Processor.process.bind(coco943Processor),
     832: coco832Processor.process.bind(coco832Processor)
   },
-  Sensual: {
-    940: sensual940Processor.process.bind(sensual940Processor)
+  "IHL/Sensual": {
+    940: IHLsensual940Processor.process.bind(IHLsensual940Processor)
   },
   Central: {
     943: central943Processor.process.bind(central943Processor),

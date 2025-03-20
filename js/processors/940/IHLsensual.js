@@ -1,6 +1,6 @@
 import utils from '../../../utils/utils.js';
 
-const sensual940Processor = {
+const IHLsensual940Processor = {
     // Define static column mappings
     staticColumnMappings: {
         'A': 'A',
@@ -272,4 +272,4 @@ const sensual940Processor = {
     }
 };
 
-export default sensual940Processor;
+export default IHLsensual940Processor;
