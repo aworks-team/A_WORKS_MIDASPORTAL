@@ -61,6 +61,7 @@ const IHLsensual940Processor = {
     // Define special retailers for column Q
     specialRetailers: [
         { keyword: 'BURLINGTON', value: 'BURLINGTON' },
+        { keyword: 'SAN BERNARDINO', value: 'SAN BERNARDINO' },
         { keyword: 'TJMAXX', value: 'TJMAXX' },
         { keyword: 'TJ MAXX', value: 'TJMAXX' }, // Alternative with space
         { keyword: 'DDS', value: 'DDs' },
