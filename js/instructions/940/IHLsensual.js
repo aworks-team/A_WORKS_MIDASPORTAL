@@ -48,6 +48,7 @@ export const sensual940Instructions = {
             items: [
                 { text: "Column Q: Extract first word from 'Ship To Address 1' header with special handling:" },
                 { text: "- If address contains 'BURLINGTON', use 'BURLINGTON'" },
+                { text: "- If address contains 'SAN BERNARDINO', use 'SAN BERNARDINO'" },
                 { text: "- If address contains 'TJMAXX' or 'TJ MAXX', use 'TJMAXX'" },
                 { text: "- If address contains 'DDS' or 'DD', use 'DDs'" },
                 { text: "- If address contains 'BEALLS', use 'BEALLS'" },
