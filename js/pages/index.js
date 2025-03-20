@@ -22,6 +22,14 @@ function initializeFileUpload(fileInput, fileInputButton) {
   fileInput.addEventListener("change", (e) => {
     const fileName = e.target.files[0]?.name || "No file selected";
     document.getElementById("file-name").textContent = fileName;
+    
+    // Update the file viewer if in direct viewer mode
+    const fileTypeSelect = document.getElementById("fileType");
+    const companySelect = document.getElementById("company");
+    
+    if (fileTypeSelect && companySelect) {
+      updateFileInputMode(fileTypeSelect.value, companySelect.value);
+    }
   });
 }
 
@@ -43,8 +51,6 @@ function initializeCompanySelect(fileTypeSelect, companySelect) {
         832: ["Trust", "Coco", "Allurai", "Central", "JNS", "Can"]
       };
 
-
-
       console.log("Companies for this type:", companyMap[fileType]);
 
       const companies = companyMap[fileType] || [];
@@ -56,7 +62,99 @@ function initializeCompanySelect(fileTypeSelect, companySelect) {
         companySelect.appendChild(option);
       });
     }
+    
+    // Update UI based on selection
+    updateFileInputMode(fileTypeSelect.value, companySelect.value);
   });
+  
+  // Add an event listener to company select to update the UI mode
+  companySelect.addEventListener("change", () => {
+    updateFileInputMode(fileTypeSelect.value, companySelect.value);
+  });
+}
+
+function updateFileInputMode(fileType, company) {
+  const uploadFormElement = document.getElementById("uploadForm");
+  const fileViewerElement = document.getElementById("fileViewerContainer");
+  const externalToolElement = document.getElementById("externalToolContainer");
+  const fileInputWrapper = document.querySelector(".file-input-wrapper");
+  const submitButton = document.querySelector("button[type='submit']");
+  const fileInput = document.getElementById("csvFile");
+  const fileLabel = document.querySelector(".form-group > label"); // Get the label element
+  
+  console.log("Updating file input mode for:", { fileType, company });
+  
+  // Check if we should use special viewer modes
+  let useDirectViewer = false;
+  let useExternalTool = false;
+  let config = null;
+  
+  if (fileType && company) {
+    // Get the configuration for this file type and company
+    config = fileTypeConfig[fileType]?.[company];
+    
+    // Check if this is an object with viewer properties
+    if (config && typeof config === 'object') {
+      if (config.useDirectViewer) {
+        if (config.viewerType === "external") {
+          useExternalTool = true;
+        } else {
+          useDirectViewer = true;
+        }
+      }
+    }
+  }
+  
+  // Hide all containers first
+  if (fileInputWrapper) fileInputWrapper.style.display = "none";
+  if (submitButton) submitButton.style.display = "none";
+  if (fileViewerElement) fileViewerElement.style.display = "none";
+  if (externalToolElement) externalToolElement.style.display = "none";
+  
+  // Also hide the file selection label text for special modes
+  if (fileLabel) {
+    fileLabel.style.display = (useExternalTool || useDirectViewer) ? "none" : "block";
+  }
+  
+  if (useExternalTool) {
+    console.log("Using external tool mode");
+    
+    // Show the external tool container
+    if (externalToolElement) {
+      externalToolElement.style.display = "block";
+      
+      // Set the iframe src to the external URL
+      const iframe = document.getElementById("externalTool");
+      if (iframe && config.externalUrl) {
+        iframe.src = config.externalUrl;
+      }
+    }
+  } else if (useDirectViewer) {
+    console.log("Using direct viewer mode");
+    
+    // Show the viewer container
+    if (fileViewerElement) {
+      fileViewerElement.style.display = "block";
+      
+      // If file selected, load it in the iframe
+      if (fileInput && fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const objectUrl = URL.createObjectURL(file);
+        
+        // Set the src of the iframe
+        const iframe = document.getElementById("fileViewer");
+        if (iframe) {
+          iframe.src = objectUrl;
+        }
+      }
+    }
+  } else {
+    console.log("Using standard upload mode");
+    
+    // Show upload form elements
+    if (fileInputWrapper) fileInputWrapper.style.display = "block";
+    if (submitButton) submitButton.style.display = "block";
+  }
 }
 
 function initializeInstructions(
@@ -133,6 +231,22 @@ function initializeFormSubmission(
     const file = fileInput.files[0];
     const fileType = fileTypeSelect.value;
     const company = companySelect.value;
+    
+    // Check if we're in special viewer modes
+    const config = fileTypeConfig[fileType]?.[company];
+    let skipProcessing = false;
+    
+    if (config && typeof config === 'object') {
+      if (config.useDirectViewer) {
+        skipProcessing = true;
+      }
+    }
+    
+    if (skipProcessing) {
+      // If using special viewer modes, we don't need to process the file
+      console.log("Special viewer mode - skipping processing");
+      return;
+    }
 
     // Check for file selection first
     if (!file) {

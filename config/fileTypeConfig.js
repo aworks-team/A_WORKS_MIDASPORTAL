@@ -1,7 +1,12 @@
 export const fileTypeConfig = {
   "940": {
     "Corwik": ["pdf"],
-    "Prime": ["pdf"],
+    "Prime": {
+      allowedExtensions: ["pdf"],
+      useDirectViewer: true,
+      viewerType: "external",
+      externalUrl: "https://pdf-processors.onrender.com"
+    },
     // Add more companies and their allowed file types here
   },
   "943": {
