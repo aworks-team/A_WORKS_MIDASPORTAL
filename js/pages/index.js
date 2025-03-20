@@ -225,8 +225,25 @@ function initializeFormSubmission(
 
           console.log("Data processed successfully, rows:", processedData.length);
 
-          // Convert the processed data to CSV using Papa.unparse
-          const csvContent = Papa.unparse(processedData);
+          // Convert the processed data to CSV using Papa.unparse with configuration to properly handle numeric values
+          const csvContent = Papa.unparse(processedData, {
+            quotes: false,     // Only quote when necessary
+            quoteChar: '"',    // Use double quotes
+            escapeChar: '"',   // Escape character for quotes
+            delimiter: ",",    // Use comma as delimiter
+            header: false,     // Don't auto-generate header
+            transformHeader: undefined, // Don't transform headers
+            skipEmptyLines: false, // Don't skip empty lines
+            // Transform values to handle numbers appropriately
+            transform: function (value) {
+              // If the value looks like a number (but not a date), return it without quotes
+              if (/^\d+$/.test(value)) {
+                // Convert to number to remove any leading zeros
+                return Number(value).toString();
+              }
+              return value;
+            }
+          });
 
           // Create a Blob and trigger download
           const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
