@@ -6,7 +6,7 @@ import { jns943Instructions } from "./943/jns.js";
 import { trust943Instructions } from "./943/trust.js";
 import { coco943Instructions } from "./943/coco.js";
 import { coco832Instructions } from "./832/coco.js";
-import { sensual940Instructions } from "./940/sensual.js";
+import { sensual940Instructions } from "./940/IHLsensual.js";
 import { trust832Instructions } from "./832/trust.js";
 import { central943Instructions } from "./943/central.js";
 import { allurai832Instructions } from "./832/allurai.js";
