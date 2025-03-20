@@ -46,7 +46,7 @@ function initializeCompanySelect(fileTypeSelect, companySelect) {
     if (fileType) {
       // Define available companies for each file type
       const companyMap = {
-        940: ["S3 Design", "Allurai", "Sensual", "Can", "Prime", "Corwik"],
+        940: ["S3 Design", "Allurai", "IHL/Sensual", "Can", "Prime", "Corwik"],
         943: ["Allurai", "JNS", "Trust", "Coco", "Central", "Can"],
         832: ["Trust", "Coco", "Allurai", "Central", "JNS", "Can"]
       };
@@ -306,7 +306,7 @@ function initializeFormSubmission(
         try {
           let data;
           const arrayBuffer = event.target.result;
-          
+
           if (file.name.endsWith(".csv")) {
             // For CSV files
             const text = new TextDecoder().decode(new Uint8Array(arrayBuffer));
@@ -320,9 +320,9 @@ function initializeFormSubmission(
           } else {
             throw new Error("Unsupported file format");
           }
-      
+
           console.log("Data parsed successfully");
-          
+
           // Check if processor function or object with process method
           let processedData;
           if (typeof processor === 'function') {
@@ -332,20 +332,43 @@ function initializeFormSubmission(
           } else {
             throw new Error("Invalid processor configuration");
           }
-          
+
           if (!processedData || !Array.isArray(processedData)) {
             throw new Error("Processor did not return valid data");
           }
-          
+
           console.log("Data processed successfully, rows:", processedData.length);
-      
-          const ws = XLSX.utils.aoa_to_sheet(processedData);
-          const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, "Processed Data");
-      
+
+          // Convert the processed data to CSV using Papa.unparse with configuration to properly handle numeric values
+          const csvContent = Papa.unparse(processedData, {
+            quotes: false,     // Only quote when necessary
+            quoteChar: '"',    // Use double quotes
+            escapeChar: '"',   // Escape character for quotes
+            delimiter: ",",    // Use comma as delimiter
+            header: false,     // Don't auto-generate header
+            transformHeader: undefined, // Don't transform headers
+            skipEmptyLines: false, // Don't skip empty lines
+            // Transform values to handle numbers appropriately
+            transform: function (value) {
+              // If the value looks like a number (but not a date), return it without quotes
+              if (/^\d+$/.test(value)) {
+                // Convert to number to remove any leading zeros
+                return Number(value).toString();
+              }
+              return value;
+            }
+          });
+
+          // Create a Blob and trigger download
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
           const fileName = generateFileName(company, fileType);
-          XLSX.writeFile(wb, `${fileName}.xlsx`);
-      
+          link.setAttribute("download", `${fileName}.csv`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
           statusDiv.innerHTML =
             '<i class="fas fa-check"></i> Processing complete!';
           statusDiv.className = "show success";

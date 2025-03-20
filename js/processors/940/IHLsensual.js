@@ -1,6 +1,6 @@
 import utils from '../../../utils/utils.js';
 
-const sensual940Processor = {
+const IHLsensual940Processor = {
     // Define static column mappings
     staticColumnMappings: {
         'A': 'A',
@@ -10,6 +10,8 @@ const sensual940Processor = {
         'M': 'L',
         'N': 'ROUT',
         'P': 'COL',
+        'X': 'USA',
+        'CT': 'N/A',
         'CU': 'EA'
     },
 
@@ -17,15 +19,43 @@ const sensual940Processor = {
     dynamicColumnMappings: {
         'E': 'P. O. #',
         'O': 'Num',
-        'Q': 'Ship To Address 1',
-        'R': 'Ship To Address 2',
+        'S': 'Ship To Address 2',
         'U': 'Ship To City',
         'V': 'Ship To State',
         'W': 'Ship Zip',
-        'AU': 'Ship Date',
-        'AW': 'CANCEL DATE',
+        'AU': 'CANCEL DATE',
+        'AW': 'Ship Date',
         'CS': 'Item',
         'CV': 'Qty'
+    },
+
+    // Define column headers for output
+    columnHeaders: {
+        'A': 'action',
+        'B': 'customer',
+        'D': 'requested_ship_date',
+        'E': 'customer_po',
+        'G': 'ship_from_facility',
+        'K': 'priority',
+        'M': 'ship_type',
+        'N': 'carrier',
+        'O': 'customer_order_number',
+        'P': 'ship_method_of_payment',
+        'Q': 'ship_to_name',
+        'S': 'ship_to_address_line_1',
+        'T': 'ship_to_address_line_2',
+        'U': 'ship_to_city',
+        'V': 'ship_to_state',
+        'W': 'ship_to_zip',
+        'X': 'ship_to_country',
+        'AU': 'cancel_after_date',
+        'AV': 'date_to_arrive',
+        'AW': 'requested_ship_date',
+        'CS': 'item_num_display',
+        'CT': 'lot_number',
+        'CU': 'unit_of_measure',
+        'CV': 'quantity_ordered',
+        'EH': 'detail_passthru_numeric_field'
     },
 
     // Define special retailers for column Q
@@ -43,11 +73,11 @@ const sensual940Processor = {
 
     // Define Excel date mappings for known problematic values
     excelDateMappings: {
-        '45651': '12252024', // 12/25/2024
-        '45665': '01082025'  // 01/08/2025
+        '45651': '12/25/2024', // 12/25/2024
+        '45665': '01/08/2025'  // 01/08/2025
     },
 
-    // Format date to MMDDYYYY
+    // Format date to MM/DD/YYYY with slashes
     formatDate(dateStr) {
         if (!dateStr) return '';
 
@@ -73,7 +103,7 @@ const sensual940Processor = {
                         const month = String(date.getMonth() + 1).padStart(2, '0');
                         const day = String(date.getDate()).padStart(2, '0');
                         const year = date.getFullYear();
-                        const formatted = month + day + year;
+                        const formatted = `${month}/${day}/${year}`;
                         console.log(`Formatted Excel serial date: "${dateStr}" -> "${formatted}"`);
                         return formatted;
                     }
@@ -97,7 +127,7 @@ const sensual940Processor = {
                         year = '20' + year;
                     }
 
-                    const formatted = month + day + year;
+                    const formatted = `${month}/${day}/${year}`;
                     console.log(`Formatted date from MM/DD/YYYY: "${dateStr}" -> "${formatted}"`);
                     return formatted;
                 }
@@ -105,7 +135,7 @@ const sensual940Processor = {
 
             // Try using the utils date formatter if available
             if (utils.date && typeof utils.date.formattedDate === 'function') {
-                const formatted = utils.date.formattedDate(dateStr);
+                const formatted = utils.date.formattedDate(dateStr, 'MM/DD/YYYY');
                 if (formatted) {
                     console.log(`Formatted using utils: "${dateStr}" -> "${formatted}"`);
                     return formatted;
@@ -126,7 +156,7 @@ const sensual940Processor = {
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const day = String(date.getDate()).padStart(2, '0');
                 const year = date.getFullYear();
-                const formatted = month + day + year;
+                const formatted = `${month}/${day}/${year}`;
                 console.log(`Formatted using Date object: "${dateStr}" -> "${formatted}"`);
                 return formatted;
             }
@@ -137,6 +167,15 @@ const sensual940Processor = {
         // If all else fails, return empty string to avoid incorrect data
         console.warn(`Failed to format date "${dateStr}", returning empty string`);
         return '';
+    },
+
+    // Get current date in MM/DD/YYYY format with slashes
+    getCurrentDate() {
+        const today = new Date();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const year = today.getFullYear();
+        return `${month}/${day}/${year}`;
     },
 
     process(data) {
@@ -161,11 +200,24 @@ const sensual940Processor = {
         // Get column labels
         const labels = utils.excel.getExcelColumnLabels(200);
 
-        // Get current date
-        const currentDate = utils.date.getCurrentDate();
+        // Create header row
+        const headerRow = Array(labels.length).fill('');
+
+        // Find first and last column with a header defined
+        const columnPositions = Object.keys(this.columnHeaders).map(col => labels.indexOf(col)).filter(pos => pos !== -1);
+        const firstColumnIndex = Math.min(...columnPositions);
+        const lastColumnIndex = Math.max(...columnPositions);
+
+        // Fill in headers, using "null" for undefined headers between first and last
+        for (let i = 0; i < labels.length; i++) {
+            if (i >= firstColumnIndex && i <= lastColumnIndex) {
+                const columnName = labels[i];
+                headerRow[i] = this.columnHeaders[columnName] || "null";
+            }
+        }
 
         // Process non-empty rows
-        const result = dataRows
+        const processedRows = dataRows
             .filter(row => row && row.some(cell => cell !== null && cell !== undefined && cell !== ''))
             .map((row, index) => {
                 const outputRow = Array(labels.length).fill('');
@@ -175,20 +227,20 @@ const sensual940Processor = {
                     outputRow[labels.indexOf(column)] = value;
                 });
 
-                // Add current date to column D
-                outputRow[labels.indexOf('D')] = currentDate;
+                // Add current date to column D in MM/DD/YYYY format
+                outputRow[labels.indexOf('D')] = this.getCurrentDate();
 
                 // Process dynamic columns from input data
                 Object.entries(this.dynamicColumnMappings).forEach(([outColumn, inHeader]) => {
                     const headerIndex = columnIndices[inHeader];
 
-                    // Debug header index for column Q
-                    if (outColumn === 'Q') {
-                        console.log(`Column Q header "${inHeader}" index: ${headerIndex}`);
+                    // Debug header index for column S (previously Q)
+                    if (outColumn === 'S') {
+                        console.log(`Column S header "${inHeader}" index: ${headerIndex}`);
                         if (headerIndex === -1) {
                             console.warn(`WARNING: Header "${inHeader}" not found in headers: ${JSON.stringify(headers)}`);
-                            // Try alternative headers for Ship To Address 1
-                            const alternativeHeaders = ['Ship To Address 1', 'Ship-To Address 1', 'ShipTo Address 1', 'ShipToAddress1', 'Ship To Address1', 'Ship-to Address 1'];
+                            // Try alternative headers for Ship To Address 2
+                            const alternativeHeaders = ['Ship To Address 2', 'Ship-To Address 2', 'ShipTo Address 2', 'ShipToAddress2', 'Ship To Address2', 'Ship-to Address 2'];
                             for (const altHeader of alternativeHeaders) {
                                 const altIndex = utils.text.findHeaderIndex(headers, altHeader);
                                 if (altIndex !== -1) {
@@ -203,33 +255,8 @@ const sensual940Processor = {
                     if (headerIndex !== -1 && row[headerIndex] !== undefined && row[headerIndex] !== null) {
                         let value = row[headerIndex].toString();
 
-                        // Special handling for column Q (Ship To Address 1 for retailer detection)
-                        if (outColumn === 'Q') {
-                            // Convert to uppercase for case-insensitive comparison and trim whitespace
-                            const upperValue = value.toUpperCase().trim();
-                            let matched = false;
-
-                            console.log(`Processing retailer name for column Q from Ship To Address 1: "${value}" (uppercase: "${upperValue}")`);
-
-                            // Check if the value contains any of our special retailers
-                            for (const retailer of this.specialRetailers) {
-                                const keyword = retailer.keyword;
-                                // Check if the uppercase value includes the keyword
-                                if (upperValue.includes(keyword)) {
-                                    value = retailer.value;
-                                    matched = true;
-                                    console.log(`✓ Matched retailer: "${keyword}" in "${upperValue}" -> "${value}"`);
-                                    break;
-                                }
-                            }
-
-                            // If no match was found, keep the original value
-                            if (!matched) {
-                                console.log(`! No retailer match found in Ship To Address 1: "${upperValue}"`);
-                            }
-                        }
                         // Special handling for date columns
-                        else if (outColumn === 'AU' || outColumn === 'AW') {
+                        if (outColumn === 'AU' || outColumn === 'AW') {
                             const originalValue = value;
 
                             // Check if this is a known Excel date value
@@ -238,12 +265,12 @@ const sensual940Processor = {
                                 console.log(`Applied direct mapping for ${outColumn}: "${originalValue}" -> "${value}"`);
                             }
                             // Special case handling for known problematic values
-                            else if (outColumn === 'AU' && (value === '45651' || value.includes('45651'))) {
-                                value = '12252024'; // Hardcoded fix for Ship Date
+                            else if (outColumn === 'AW' && (value === '45651' || value.includes('45651'))) {
+                                value = '12/25/2024'; // Hardcoded fix for Ship Date
                                 console.log(`Applied hardcoded fix for Ship Date: "${originalValue}" -> "${value}"`);
                             }
-                            else if (outColumn === 'AW' && (value === '45665' || value.includes('45665'))) {
-                                value = '01082025'; // Hardcoded fix for Cancel Date
+                            else if (outColumn === 'AU' && (value === '45665' || value.includes('45665'))) {
+                                value = '01/08/2025'; // Hardcoded fix for Cancel Date
                                 console.log(`Applied hardcoded fix for Cancel Date: "${originalValue}" -> "${value}"`);
                             }
                             else {
@@ -251,11 +278,6 @@ const sensual940Processor = {
                             }
 
                             console.log(`Date column ${outColumn}: Original="${originalValue}", Formatted="${value}"`);
-
-                            // Verify the format is correct (MMDDYYYY)
-                            if (value && !/^\d{8}$/.test(value)) {
-                                console.warn(`Warning: Formatted date "${value}" for column ${outColumn} does not match expected MMDDYYYY format`);
-                            }
                         }
 
                         outputRow[labels.indexOf(outColumn)] = utils.text.cleanupSpecialCharacters(value);
@@ -265,11 +287,75 @@ const sensual940Processor = {
                 // Sequential number (1-based index)
                 outputRow[labels.indexOf('EH')] = index + 1;
 
+                // Process values to remove leading zeros
+                for (let i = 0; i < outputRow.length; i++) {
+                    // If value exists and is not null/undefined
+                    if (outputRow[i] !== null && outputRow[i] !== undefined && outputRow[i] !== '') {
+                        // Convert to string if it's not already
+                        let value = String(outputRow[i]);
+
+                        // Remove leading zeros from numeric values
+                        if (/^0\d+$/.test(value)) {
+                            const originalValue = value;
+                            value = value.replace(/^0+/, '');
+                            console.log(`Removed leading zero: "${originalValue}" -> "${value}" in column ${labels[i]}`);
+                            outputRow[i] = value;
+                        }
+
+                        // Special case: don't change a single "0" to empty string
+                        if (value === "0") {
+                            outputRow[i] = "0";
+                        }
+                    }
+                }
+
                 return outputRow;
             });
 
-        return result;
+        // Special handling for Column Q - Ship to name
+        // Find the "Ship To Address 1" header
+        const shipToAddress1Index = utils.text.findHeaderIndex(headers, 'Ship To Address 1');
+
+        if (shipToAddress1Index !== -1) {
+            console.log(`Found "Ship To Address 1" at index: ${shipToAddress1Index}`);
+
+            processedRows.forEach(outputRow => {
+                const rowIndex = outputRow[labels.indexOf('EH')] - 1; // Adjust for 0-based index
+                if (rowIndex >= 0 && rowIndex < dataRows.length) {
+                    const addressCell = dataRows[rowIndex][shipToAddress1Index];
+
+                    if (addressCell) {
+                        const addressValue = addressCell.toString().trim();
+                        const upperValue = addressValue.toUpperCase();
+                        let matched = false;
+
+                        // Check for special retailers
+                        for (const retailer of this.specialRetailers) {
+                            const keyword = retailer.keyword;
+                            if (upperValue.includes(keyword)) {
+                                outputRow[labels.indexOf('Q')] = retailer.value;
+                                matched = true;
+                                console.log(`✓ Matched retailer: "${keyword}" in "${upperValue}" -> "${retailer.value}"`);
+                                break;
+                            }
+                        }
+
+                        // If no retailer match, use first word of address
+                        if (!matched) {
+                            const firstWord = addressValue.split(' ')[0];
+                            outputRow[labels.indexOf('Q')] = firstWord;
+                            console.log(`Set Column Q to first word: "${firstWord}" from "${addressValue}"`);
+                        }
+                    }
+                }
+            });
+        } else {
+            console.warn('WARNING: "Ship To Address 1" header not found. Column Q may not be populated correctly.');
+        }
+
+        // Combine header row with processed data rows
+        return [headerRow, ...processedRows];
     }
 };
 
-export default sensual940Processor;
+export default IHLsensual940Processor;
