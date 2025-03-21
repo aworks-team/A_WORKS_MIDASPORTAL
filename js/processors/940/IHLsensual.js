@@ -288,25 +288,12 @@ const IHLsensual940Processor = {
                 // Sequential number (1-based index)
                 outputRow[labels.indexOf('EH')] = index + 1;
 
-                // Process values to remove leading zeros
+                // Ensure all values are consistently formatted as strings
                 for (let i = 0; i < outputRow.length; i++) {
                     // If value exists and is not null/undefined
                     if (outputRow[i] !== null && outputRow[i] !== undefined && outputRow[i] !== '') {
                         // Convert to string if it's not already
-                        let value = String(outputRow[i]);
-
-                        // Remove leading zeros from numeric values
-                        if (/^0\d+$/.test(value)) {
-                            const originalValue = value;
-                            value = value.replace(/^0+/, '');
-                            console.log(`Removed leading zero: "${originalValue}" -> "${value}" in column ${labels[i]}`);
-                            outputRow[i] = value;
-                        }
-
-                        // Special case: don't change a single "0" to empty string
-                        if (value === "0") {
-                            outputRow[i] = "0";
-                        }
+                        outputRow[i] = String(outputRow[i]);
                     }
                 }
 
