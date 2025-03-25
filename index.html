@@ -26,6 +26,9 @@
             <a href="#" class="nav-item" onclick="showPage('bolProcessor')">
                 <i class="fas fa-file-pdf"></i> BOL Processor
             </a>
+            <a href="#" class="nav-item" onclick="showPage('ihlTemplate')">
+                <i class="fas fa-file-csv"></i> IHL Template
+            </a>
             <a href="#" class="nav-item">
                 <i class="fas fa-history"></i> History
             </a>
@@ -148,6 +151,23 @@
             </div>
         </div>
 
+        <!-- IHL Template Page -->
+        <div id="ihlTemplate" class="content-page" style="display: none;">
+            <div class="card">
+                <h2>IHL Template</h2>
+
+                <!-- Loading Spinner -->
+                <div id="ihlIframeLoader" style="text-align: center; padding: 20px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i> Loading...
+                </div>
+
+                <!-- iFrame -->
+                <iframe id="ihlTemplateFrame" src="https://ihl-template.onrender.com"
+                    width="100%" height="600px" frameborder="0" onload="hideIhlIframeLoader()">
+                </iframe>
+            </div>
+        </div>
+
         <div id="manualInstructions"></div>
     </main>
 
@@ -172,6 +192,9 @@
         }
         function hideIframeLoader() {
             document.getElementById("iframeLoader").style.display = "none";
+        }
+        function hideIhlIframeLoader() {
+            document.getElementById("ihlIframeLoader").style.display = "none";
         }
         function hideExternalToolLoader() {
             document.getElementById("externalToolLoader").style.display = "none";
