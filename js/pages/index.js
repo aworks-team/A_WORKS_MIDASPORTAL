@@ -48,7 +48,7 @@ function initializeCompanySelect(fileTypeSelect, companySelect) {
       const companyMap = {
         940: ["S3 Design", "Allurai", "IHL/Sensual", "Can", "Prime", "Corwik"],
         943: ["Allurai", "JNS", "Trust", "Coco", "Central", "Can"],
-        832: ["Trust", "Coco", "Allurai", "Central", "JNS", "Can"]
+        832: ["Trust", "Coco", "Allurai", "Central", "JNS", "Can"],
       };
 
       console.log("Companies for this type:", companyMap[fileType]);
@@ -94,7 +94,7 @@ function updateFileInputMode(fileType, company) {
     config = fileTypeConfig[fileType]?.[company];
 
     // Check if this is an object with viewer properties
-    if (config && typeof config === 'object') {
+    if (config && typeof config === "object") {
       if (config.useDirectViewer) {
         if (config.viewerType === "external") {
           useExternalTool = true;
@@ -113,7 +113,8 @@ function updateFileInputMode(fileType, company) {
 
   // Also hide the file selection label text for special modes
   if (fileLabel) {
-    fileLabel.style.display = (useExternalTool || useDirectViewer) ? "none" : "block";
+    fileLabel.style.display =
+      useExternalTool || useDirectViewer ? "none" : "block";
   }
 
   if (useExternalTool) {
@@ -185,23 +186,23 @@ function initializeInstructions(
                     </div>
                     <div class="instructions-content">
                         ${instructionSet.steps
-          .map(
-            (section) => `
+                          .map(
+                            (section) => `
                             <div class="instruction-section">
                                 <h4>${section.title}</h4>
                                 <ul>
                                     ${section.items
-                .map(
-                  (item) => `
+                                      .map(
+                                        (item) => `
                                         <li>${item.text}</li>
                                     `
-                )
-                .join("")}
+                                      )
+                                      .join("")}
                                 </ul>
                             </div>
                         `
-          )
-          .join("")}
+                          )
+                          .join("")}
                     </div>
                 </div>
             `;
@@ -236,7 +237,7 @@ function initializeFormSubmission(
     const config = fileTypeConfig[fileType]?.[company];
     let skipProcessing = false;
 
-    if (config && typeof config === 'object') {
+    if (config && typeof config === "object") {
       if (config.useDirectViewer) {
         skipProcessing = true;
       }
@@ -250,7 +251,9 @@ function initializeFormSubmission(
 
     // Check for file selection first
     if (!file) {
-      showErrorModal("<strong>No file selected!</strong> Please select a file to process.");
+      showErrorModal(
+        "<strong>No file selected!</strong> Please select a file to process."
+      );
       return;
     }
 
@@ -261,17 +264,31 @@ function initializeFormSubmission(
     }
 
     // Extract file extension
-    const fileName = file.name.toLowerCase();
-    const fileExtension = fileName.split('.').pop();
+    const fileName = file.name;
+    const fileExtension = fileName.split(".").pop();
 
-    console.log("File details:", { fileName, fileType, company, fileExtension });
+    console.log("File details:", {
+      fileName,
+      fileType,
+      company,
+      fileExtension,
+    });
 
     // Validate file extension
-    const allowedExtensions = fileTypeConfig[fileType]?.[company] || fileTypeConfig["default"];
-    if (!allowedExtensions.includes(fileExtension)) {
+    const allowedExtensions =
+      fileTypeConfig[fileType]?.[company] || fileTypeConfig["default"];
+    if (
+      !allowedExtensions.some(
+        (ext) => ext.toLowerCase() === fileExtension.toLowerCase()
+      )
+    ) {
       // Format extensions with dot prefix
-      const formattedExtensions = allowedExtensions.map(ext => `.${ext}`);
-      showErrorModal(`Unsupported file format for <strong>${company}</strong> - <strong>${fileType}</strong>. Allowed formats: <strong>${formattedExtensions.join(', ')}</strong>`);
+      const formattedExtensions = allowedExtensions.map((ext) => `.${ext}`);
+      showErrorModal(
+        `Unsupported file format for <strong>${company}</strong> - <strong>${fileType}</strong>. Allowed formats: <strong>${formattedExtensions.join(
+          ", "
+        )}</strong>`
+      );
       return;
     }
 
@@ -307,14 +324,17 @@ function initializeFormSubmission(
           let data;
           const arrayBuffer = event.target.result;
 
-          if (file.name.endsWith(".csv")) {
+          if (file.name.toLowerCase().endsWith(".csv")) {
             // For CSV files
             const text = new TextDecoder().decode(new Uint8Array(arrayBuffer));
             data = Papa.parse(text, { header: false }).data;
-          } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
+          } else if (
+            file.name.toLowerCase().endsWith(".xlsx") ||
+            file.name.toLowerCase().endsWith(".xls")
+          ) {
             // For Excel files
             data = XLSX.read(new Uint8Array(arrayBuffer), { type: "array" });
-          } else if (file.name.endsWith(".pdf")) {
+          } else if (file.name.toLowerCase().endsWith(".pdf")) {
             // For PDF files
             data = arrayBuffer; // Pass the raw buffer for PDF processing
           } else {
@@ -325,7 +345,7 @@ function initializeFormSubmission(
 
           // Check if processor function or object with process method
           let processedData;
-          if (typeof processor === 'function') {
+          if (typeof processor === "function") {
             processedData = await processor(data);
           } else if (processor.process) {
             processedData = await processor.process(data);
@@ -337,13 +357,21 @@ function initializeFormSubmission(
             throw new Error("Processor did not return valid data");
           }
 
-          console.log("Data processed successfully, rows:", processedData.length);
+          console.log(
+            "Data processed successfully, rows:",
+            processedData.length
+          );
 
           // Trim trailing empty fields from each row to match manual format
-          const trimmedData = processedData.map(row => {
+          const trimmedData = processedData.map((row) => {
             // Find the last non-empty cell index
             let lastIndex = row.length - 1;
-            while (lastIndex >= 0 && (row[lastIndex] === '' || row[lastIndex] === null || row[lastIndex] === undefined)) {
+            while (
+              lastIndex >= 0 &&
+              (row[lastIndex] === "" ||
+                row[lastIndex] === null ||
+                row[lastIndex] === undefined)
+            ) {
               lastIndex--;
             }
             // Return only the cells up to and including the last non-empty one
@@ -352,18 +380,20 @@ function initializeFormSubmission(
 
           // Convert the processed data to CSV using Papa.unparse with configuration to properly handle numeric values
           const csvContent = Papa.unparse(trimmedData, {
-            quotes: true,     // Quote all fields to preserve formatting
-            quoteChar: '"',    // Use double quotes
-            escapeChar: '"',   // Escape character for quotes
-            delimiter: ",",    // Use comma as delimiter
-            header: false,     // Don't auto-generate header
+            quotes: true, // Quote all fields to preserve formatting
+            quoteChar: '"', // Use double quotes
+            escapeChar: '"', // Escape character for quotes
+            delimiter: ",", // Use comma as delimiter
+            header: false, // Don't auto-generate header
             transformHeader: undefined, // Don't transform headers
-            skipEmptyLines: false // Don't skip empty lines
+            skipEmptyLines: false, // Don't skip empty lines
             // Removed the transform function to preserve leading zeros
           });
 
           // Create a Blob and trigger download
-          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const blob = new Blob([csvContent], {
+            type: "text/csv;charset=utf-8;",
+          });
           const link = document.createElement("a");
           link.href = URL.createObjectURL(blob);
           const fileName = generateFileName(company, fileType);
