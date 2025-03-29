@@ -23,8 +23,8 @@ const IHLsensual940Processor = {
         'U': 'Ship To City',
         'V': 'Ship To State',
         'W': 'Ship Zip',
-        'AU': 'CANCEL DATE',
-        'AW': 'Ship Date',
+        'AU': 'Ship Date',
+        'AW': 'CANCEL DATE',
         'CS': 'Item',
         'CV': 'Qty'
     },
@@ -48,9 +48,9 @@ const IHLsensual940Processor = {
         'V': 'ship_to_state',
         'W': 'ship_to_zip',
         'X': 'ship_to_country',
-        'AU': 'cancel_after_date',
+        'AU': 'requested_ship_date',
         'AV': 'date_to_arrive',
-        'AW': 'requested_ship_date',
+        'AW': 'cancel_after_date',
         'CS': 'item_num_display',
         'CT': 'lot_number',
         'CU': 'unit_of_measure',
@@ -266,11 +266,11 @@ const IHLsensual940Processor = {
                                 console.log(`Applied direct mapping for ${outColumn}: "${originalValue}" -> "${value}"`);
                             }
                             // Special case handling for known problematic values
-                            else if (outColumn === 'AW' && (value === '45651' || value.includes('45651'))) {
+                            else if (outColumn === 'AU' && (value === '45651' || value.includes('45651'))) {
                                 value = '12/25/2024'; // Hardcoded fix for Ship Date
                                 console.log(`Applied hardcoded fix for Ship Date: "${originalValue}" -> "${value}"`);
                             }
-                            else if (outColumn === 'AU' && (value === '45665' || value.includes('45665'))) {
+                            else if (outColumn === 'AW' && (value === '45665' || value.includes('45665'))) {
                                 value = '01/08/2025'; // Hardcoded fix for Cancel Date
                                 console.log(`Applied hardcoded fix for Cancel Date: "${originalValue}" -> "${value}"`);
                             }
