@@ -36,8 +36,8 @@ export const sensual940Instructions = {
                 { text: "Column U: Map from 'Ship To City' header" },
                 { text: "Column V: Map from 'Ship To State' header" },
                 { text: "Column W: Map from 'Ship Zip' header" },
-                { text: "Column AU: Map from 'CANCEL DATE' header" },
-                { text: "Column AW: Map from 'Ship Date' header" },
+                { text: "Column AU: Map from 'Ship Date' header" },
+                { text: "Column AW: Map from 'CANCEL DATE' header" },
                 { text: "Column CS: Map from 'Item' header" },
                 { text: "Column CV: Map from 'Qty' header" },
                 { text: "Column EH: Sequential numbering (1, 2, 3, etc.)" }
@@ -63,8 +63,8 @@ export const sensual940Instructions = {
             items: [
                 { text: "All dates are formatted as MM/DD/YYYY with slashes (e.g., 12/25/2024)" },
                 { text: "Column D: Current date in MM/DD/YYYY format" },
-                { text: "Column AU: Map from 'CANCEL DATE' header and format as MM/DD/YYYY" },
-                { text: "Column AW: Map from 'Ship Date' header and format as MM/DD/YYYY" },
+                { text: "Column AU: Map from 'Ship Date' header and format as MM/DD/YYYY" },
+                { text: "Column AW: Map from 'CANCEL DATE' header and format as MM/DD/YYYY" },
                 { text: "Special Excel Date Mappings:" },
                 { text: "- Excel date 45651 maps to 12/25/2024 (December 25, 2024)" },
                 { text: "- Excel date 45665 maps to 01/08/2025 (January 8, 2025)" }
@@ -91,9 +91,9 @@ export const sensual940Instructions = {
                 { text: "V = ship_to_state" },
                 { text: "W = ship_to_zip" },
                 { text: "X = ship_to_country" },
-                { text: "AU = cancel_after_date" },
+                { text: "AU = requested_ship_date" },
                 { text: "AV = date_to_arrive" },
-                { text: "AW = requested_ship_date" },
+                { text: "AW = cancel_after_date" },
                 { text: "CS = item_num_display" },
                 { text: "CT = lot_number" },
                 { text: "CU = unit_of_measure" },
